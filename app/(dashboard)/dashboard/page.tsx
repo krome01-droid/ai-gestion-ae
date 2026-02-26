@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+export const dynamic = 'force-dynamic'
+
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { formatCurrency } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,9 +10,10 @@ import { FileSearch, TrendingDown, AlertTriangle, Users, Plus } from 'lucide-rea
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  const adminClient = await createAdminClient()
 
   // KPIs globaux
-  const { data: analyses } = await supabase
+  const { data: analyses } = await adminClient
     .from('ai_analyses')
     .select('id, report_status, remaining_due, revenue_gap, is_validated, created_at, ai_extracted_name, student_name_input, file_name')
     .eq('status', 'done')
@@ -23,7 +26,7 @@ export default async function DashboardPage() {
   const totalRemaining = all.reduce((acc, a) => acc + (a.remaining_due ?? 0), 0)
   const totalGap = all.filter(a => (a.revenue_gap ?? 0) > 0).reduce((acc, a) => acc + (a.revenue_gap ?? 0), 0)
 
-  const { count: studentsCount } = await supabase
+  const { count: studentsCount } = await adminClient
     .from('students')
     .select('*', { count: 'exact', head: true })
 

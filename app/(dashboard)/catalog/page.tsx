@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+export const dynamic = 'force-dynamic'
+
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { CatalogAddDialog } from '@/components/catalog-add-dialog'
 import { CatalogDeleteButton } from '@/components/catalog-delete-button'
@@ -8,11 +10,12 @@ import { BookOpen } from 'lucide-react'
 
 export default async function CatalogPage() {
   const supabase = await createClient()
+  const adminClient = await createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
   const isAdmin = user?.app_metadata?.role === 'admin'
 
   const today = new Date().toISOString().split('T')[0]
-  const { data: items } = await supabase
+  const { data: items } = await adminClient
     .from('catalog_prices')
     .select('id, service_name, price_ht, valid_from, valid_to')
     .or(`valid_to.is.null,valid_to.gte.${today}`)

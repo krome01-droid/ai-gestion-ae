@@ -1,26 +1,27 @@
-import { createClient } from '@/lib/supabase/server'
+export const dynamic = 'force-dynamic'
+
+import { createAdminClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Plus, Users } from 'lucide-react'
+import { Users } from 'lucide-react'
 
 export default async function ElevesPage() {
-  const supabase = await createClient()
+  const adminClient = await createAdminClient()
 
-  const { data: students } = await supabase
+  const { data: students } = await adminClient
     .from('students')
     .select('id, full_name, license_type, agency, created_at')
     .order('full_name')
 
-  // Compte les analyses par élève
-  const { data: analysesCounts } = await supabase
+  const { data: analysesCounts } = await adminClient
     .from('ai_analyses')
     .select('student_id')
     .eq('status', 'done')
     .not('student_id', 'is', null)
 
   const countMap: Record<string, number> = {}
-  for (const a of analysesCounts ?? []) {
+  for (const a of (analysesCounts ?? []) as Array<{ student_id: string | null }>) {
     if (a.student_id) countMap[a.student_id] = (countMap[a.student_id] ?? 0) + 1
   }
 
@@ -53,7 +54,7 @@ export default async function ElevesPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {students.map((s) => (
+              {(students as Array<{ id: string; full_name: string; license_type: string | null; agency: string | null; created_at: string }>).map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-slate-900">{s.full_name}</td>
                   <td className="px-4 py-3">

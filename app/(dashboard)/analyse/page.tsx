@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+export const dynamic = 'force-dynamic'
+
+import { createAdminClient } from '@/lib/supabase/server'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,9 +14,9 @@ const STATUS_LABELS = {
 }
 
 export default async function AnalyseListPage() {
-  const supabase = await createClient()
+  const adminClient = await createAdminClient()
 
-  const { data: analyses } = await supabase
+  const { data: analyses } = await adminClient
     .from('ai_analyses')
     .select('id, student_name_input, ai_extracted_name, file_name, report_status, remaining_due, total_hours_recorded, agency, created_at, is_validated')
     .eq('status', 'done')
