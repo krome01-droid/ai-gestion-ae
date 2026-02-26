@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 const TODAY = new Date().toISOString().split('T')[0]
 
@@ -104,14 +104,19 @@ const DEFAULT_CATALOG = [
   { service_name: "Prestation payée ancien outil", price_ht: 0 },
 ]
 
-export async function addCatalogPrice(formData: FormData) {
+async function getAdminOrError() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') {
-    return { error: 'Non autorisé' }
-  }
+  if (!user || user.app_metadata?.role !== 'admin') return { user: null, adminClient: null }
+  const adminClient = await createAdminClient()
+  return { user, adminClient }
+}
 
-  const { error } = await supabase.from('catalog_prices').insert({
+export async function addCatalogPrice(formData: FormData) {
+  const { adminClient } = await getAdminOrError()
+  if (!adminClient) return { error: 'Non autorisé' }
+
+  const { error } = await adminClient.from('catalog_prices').insert({
     service_name: formData.get('service_name') as string,
     price_ht: parseFloat(formData.get('price_ht') as string),
     valid_from: (formData.get('valid_from') as string) || TODAY,
@@ -124,13 +129,10 @@ export async function addCatalogPrice(formData: FormData) {
 }
 
 export async function updateCatalogPrice(id: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') {
-    return { error: 'Non autorisé' }
-  }
+  const { adminClient } = await getAdminOrError()
+  if (!adminClient) return { error: 'Non autorisé' }
 
-  const { error } = await supabase
+  const { error } = await adminClient
     .from('catalog_prices')
     .update({
       service_name: formData.get('service_name') as string,
@@ -146,24 +148,18 @@ export async function updateCatalogPrice(id: string, formData: FormData) {
 }
 
 export async function deleteCatalogPrice(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') {
-    return { error: 'Non autorisé' }
-  }
+  const { adminClient } = await getAdminOrError()
+  if (!adminClient) return { error: 'Non autorisé' }
 
-  const { error } = await supabase.from('catalog_prices').delete().eq('id', id)
+  const { error } = await adminClient.from('catalog_prices').delete().eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/catalog')
   return { success: true }
 }
 
 export async function seedDefaultCatalog() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') {
-    return { error: 'Non autorisé' }
-  }
+  const { adminClient } = await getAdminOrError()
+  if (!adminClient) return { error: 'Non autorisé' }
 
   const rows = DEFAULT_CATALOG.map(item => ({
     service_name: item.service_name,
@@ -172,7 +168,7 @@ export async function seedDefaultCatalog() {
     valid_to: null,
   }))
 
-  const { error } = await supabase.from('catalog_prices').insert(rows)
+  const { error } = await adminClient.from('catalog_prices').insert(rows)
   if (error) return { error: error.message }
 
   revalidatePath('/catalog')
