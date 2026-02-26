@@ -8,9 +8,15 @@ import { Database } from 'lucide-react'
 
 export function SeedCatalogButton() {
   const [loading, setLoading] = useState(false)
+  const [asked, setAsked] = useState(false)
 
   const handleSeed = async () => {
-    if (!confirm('Importer les 80+ prestations par défaut ? (Ne supprime pas les existantes)')) return
+    if (!asked) {
+      setAsked(true)
+      setTimeout(() => setAsked(false), 4000)
+      return
+    }
+    setAsked(false)
     setLoading(true)
     const result = await seedDefaultCatalog()
     if (result.error) toast.error(result.error)
@@ -19,9 +25,9 @@ export function SeedCatalogButton() {
   }
 
   return (
-    <Button size="sm" variant="outline" onClick={handleSeed} disabled={loading}>
+    <Button size="sm" variant={asked ? 'destructive' : 'outline'} onClick={handleSeed} disabled={loading}>
       <Database className="mr-1 h-4 w-4" />
-      {loading ? 'Import...' : 'Importer catalogue'}
+      {loading ? 'Import...' : asked ? 'Confirmer ?' : 'Importer catalogue'}
     </Button>
   )
 }
