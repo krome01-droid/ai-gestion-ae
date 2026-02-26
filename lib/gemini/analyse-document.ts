@@ -121,7 +121,7 @@ const REPORT_SCHEMA: Schema = {
   ],
 }
 
-// ── Conversion fichier → base64 ─────────────────────────────────────────────
+// ── Conversion fichier → base64 (PDF / images) ──────────────────────────────
 async function fileToBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer()
   const bytes = new Uint8Array(buffer)
@@ -130,6 +130,25 @@ async function fileToBase64(file: File): Promise<string> {
     binary += String.fromCharCode(bytes[i])
   }
   return btoa(binary)
+}
+
+// ── Conversion CSV / XLSX → texte brut ──────────────────────────────────────
+async function fileToText(file: File): Promise<string> {
+  const isCsv = file.type === 'text/csv' || file.name.toLowerCase().endsWith('.csv')
+  if (isCsv) return file.text()
+
+  // XLSX / XLS → convert via xlsx library
+  const { read, utils } = await import('xlsx')
+  const buffer = await file.arrayBuffer()
+  const workbook = read(buffer)
+  return workbook.SheetNames.map((name: string) => {
+    const ws = workbook.Sheets[name]
+    return `=== Feuille: ${name} ===\n${utils.sheet_to_csv(ws)}`
+  }).join('\n\n')
+}
+
+function isVisionFile(file: File): boolean {
+  return file.type.includes('pdf') || file.type.startsWith('image/')
 }
 
 // ── Appel principal Gemini ──────────────────────────────────────────────────
@@ -155,13 +174,20 @@ export async function analyseDocument(
   const parts: Array<{ inlineData: { mimeType: string; data: string } } | { text: string }> = []
 
   for (const file of files) {
-    const base64Data = await fileToBase64(file)
-    parts.push({
-      inlineData: {
-        mimeType: file.type,
-        data: base64Data,
-      },
-    })
+    if (isVisionFile(file)) {
+      // PDF ou image → inlineData base64
+      const base64Data = await fileToBase64(file)
+      parts.push({
+        inlineData: {
+          mimeType: file.type,
+          data: base64Data,
+        },
+      })
+    } else {
+      // CSV / XLSX / autre → convertir en texte
+      const textContent = await fileToText(file)
+      parts.push({ text: `\n=== Fichier: ${file.name} ===\n${textContent}` })
+    }
   }
 
   let promptText = 'Analysez ces documents comptables.'
@@ -178,10 +204,7 @@ export async function analyseDocument(
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: {
-      role: 'user',
-      parts,
-    },
+    contents: [{ role: 'user', parts }],
     config: {
       systemInstruction: fullSystemInstruction,
       responseMimeType: 'application/json',
@@ -191,7 +214,7 @@ export async function analyseDocument(
   })
 
   const text = response.text
-  if (!text) throw new Error('Réponse vide de l\'IA')
+  if (!text) throw new Error("Réponse vide de l'IA")
 
   return JSON.parse(text) as AiAnalysisResult
 }

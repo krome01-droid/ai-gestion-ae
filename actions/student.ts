@@ -49,15 +49,15 @@ export async function deleteStudent(id: string) {
   return { success: true }
 }
 
-// Trouve ou crée un élève par son nom — utilisé après l'analyse IA
+// Trouve ou crée un élève par son nom — utilisé après l'analyse IA (service_role)
 export async function findOrCreateStudent(
   fullName: string,
   licenseType: string = 'B'
 ): Promise<string | null> {
-  const supabase = await createClient()
+  const { createAdminClient } = await import('@/lib/supabase/server')
+  const adminClient = createAdminClient()
 
-  // Cherche un élève existant (recherche insensible à la casse)
-  const { data: existing } = await supabase
+  const { data: existing } = await adminClient
     .from('students')
     .select('id')
     .ilike('full_name', fullName.trim())
@@ -66,8 +66,7 @@ export async function findOrCreateStudent(
 
   if (existing) return existing.id
 
-  // Crée un nouvel élève
-  const { data: created } = await supabase
+  const { data: created } = await adminClient
     .from('students')
     .insert({ full_name: fullName.trim(), license_type: licenseType })
     .select('id')
