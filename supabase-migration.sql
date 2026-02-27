@@ -112,11 +112,17 @@ ALTER TABLE catalog_prices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_analyses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE school_settings ENABLE ROW LEVEL SECURITY;
 
--- PROFILES
+-- PROFILES (DROP IF EXISTS pour éviter la récursion infinie sur réexécution)
+DROP POLICY IF EXISTS "Users can read own profile" ON profiles;
+DROP POLICY IF EXISTS "Admins can read all profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Admins full access profiles" ON profiles;
 CREATE POLICY "Users can read own profile" ON profiles
   FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Admins can read all profiles" ON profiles
-  FOR SELECT USING ((auth.jwt()->'app_metadata'->>'role') = 'admin');
+CREATE POLICY "Users can update own profile" ON profiles
+  FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Admins full access profiles" ON profiles
+  FOR ALL USING ((auth.jwt()->'app_metadata'->>'role') = 'admin');
 
 -- STUDENTS
 CREATE POLICY "Authenticated users can read students" ON students

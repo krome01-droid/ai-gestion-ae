@@ -10,7 +10,7 @@ import { FileSearch, TrendingDown, AlertTriangle, Users, Plus, Clock, Graduation
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const adminClient = await createAdminClient()
+  const adminClient = createAdminClient()
 
   // KPIs globaux
   const { data: analyses } = await adminClient
