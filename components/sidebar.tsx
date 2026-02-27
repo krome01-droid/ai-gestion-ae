@@ -11,6 +11,8 @@ import {
   Settings,
   LogOut,
   GraduationCap,
+  TrendingUp,
+  UserCog,
 } from 'lucide-react'
 import { logout } from '@/actions/auth'
 import { Button } from '@/components/ui/button'
@@ -25,14 +27,16 @@ const adminItems: NavItem[] = [
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
   { href: '/analyse', label: 'Analyses IA', icon: FileSearch },
   { href: '/eleves', label: 'Élèves', icon: Users },
+  { href: '/rentabilite', label: 'Rentabilité', icon: TrendingUp },
+  { href: '/users', label: 'Utilisateurs', icon: UserCog },
   { href: '/catalog', label: 'Catalogue', icon: BookOpen },
   { href: '/settings', label: 'Paramètres', icon: Settings },
 ]
 
 const collaborateurItems: NavItem[] = [
-  { href: '/collaborateur', label: 'Mon espace', icon: LayoutDashboard },
-  { href: '/analyse', label: 'Analyses IA', icon: FileSearch },
-  { href: '/catalog', label: 'Catalogue', icon: BookOpen },
+  { href: '/collaborateur', label: 'Tableau de bord', icon: LayoutDashboard },
+  { href: '/analyse', label: 'Analyses', icon: FileSearch },
+  { href: '/eleves', label: 'Élèves', icon: Users },
 ]
 
 interface SidebarProps {
