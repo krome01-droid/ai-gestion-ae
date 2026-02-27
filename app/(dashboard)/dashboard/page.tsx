@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { FileSearch, TrendingDown, AlertTriangle, Users, Plus } from 'lucide-react'
+import { FileSearch, TrendingDown, AlertTriangle, Users, Plus, Clock, GraduationCap } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   // KPIs globaux
   const { data: analyses } = await adminClient
     .from('ai_analyses')
-    .select('id, report_status, remaining_due, revenue_gap, is_validated, created_at, ai_extracted_name, student_name_input, file_name')
+    .select('id, report_status, remaining_due, revenue_gap, is_validated, created_at, ai_extracted_name, student_name_input, file_name, driven_hours, exams_passed')
     .eq('status', 'done')
     .order('created_at', { ascending: false })
 
@@ -25,6 +25,8 @@ export default async function DashboardPage() {
   const anomalies = all.filter(a => a.report_status === 'DISCREPANCY').length
   const totalRemaining = all.reduce((acc, a) => acc + (a.remaining_due ?? 0), 0)
   const totalGap = all.filter(a => (a.revenue_gap ?? 0) > 0).reduce((acc, a) => acc + (a.revenue_gap ?? 0), 0)
+  const totalDrivenHours = all.reduce((acc, a) => acc + ((a.driven_hours as number) ?? 0), 0)
+  const totalExams = all.reduce((acc, a) => acc + ((a.exams_passed as number) ?? 0), 0)
 
   const { count: studentsCount } = await adminClient
     .from('students')
@@ -45,7 +47,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-1">
@@ -82,6 +84,24 @@ export default async function DashboardPage() {
               <p className="text-xs uppercase text-slate-500">Manque à gagner</p>
             </div>
             <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalGap)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="h-4 w-4 text-indigo-500" />
+              <p className="text-xs uppercase text-slate-500">Heures conduites</p>
+            </div>
+            <p className="text-2xl font-bold text-indigo-700">{totalDrivenHours.toFixed(1)}h</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <GraduationCap className="h-4 w-4 text-violet-500" />
+              <p className="text-xs uppercase text-slate-500">Examens passés</p>
+            </div>
+            <p className="text-2xl font-bold text-violet-700">{totalExams}</p>
           </CardContent>
         </Card>
       </div>

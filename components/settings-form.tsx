@@ -16,6 +16,13 @@ interface SettingsData {
   phone?: string | null
   email?: string | null
   siret?: string | null
+  taux_horaire_salarie?: number | null
+  taux_horaire_independant?: number | null
+  cout_carburant_heure?: number | null
+  assurance_vehicule_heure?: number | null
+  cout_secretariat_heure?: number | null
+  loyer_charges_heure?: number | null
+  frais_divers_ajustement?: number | null
 }
 
 export function SettingsForm({ settings }: { settings: SettingsData | null }) {
@@ -73,8 +80,46 @@ export function SettingsForm({ settings }: { settings: SettingsData | null }) {
           <Label>Taux TVA (%)</Label>
           <Input name="tva_rate" type="number" step="0.1" defaultValue={settings?.tva_rate ?? 0} />
         </div>
+
+        <Separator />
+
+        <div>
+          <p className="text-sm font-semibold text-slate-800 mb-3">Configuration des Coûts &amp; Rentabilité</p>
+          <p className="text-xs text-slate-500 mb-4">Ces valeurs servent à calculer la marge estimée par heure de conduite dans la page Rentabilité.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Taux Horaire Salarié (€/h)</Label>
+              <Input name="taux_horaire_salarie" type="number" step="0.01" defaultValue={settings?.taux_horaire_salarie ?? 22.39} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Taux Horaire Indépendant (€/h)</Label>
+              <Input name="taux_horaire_independant" type="number" step="0.01" defaultValue={settings?.taux_horaire_independant ?? 33.25} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Coût Carburant/Heure (€)</Label>
+              <Input name="cout_carburant_heure" type="number" step="0.01" defaultValue={settings?.cout_carburant_heure ?? 2} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Assurance Véhicule/Heure (€)</Label>
+              <Input name="assurance_vehicule_heure" type="number" step="0.01" defaultValue={settings?.assurance_vehicule_heure ?? 2} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Coût Secrétariat/Heure (€)</Label>
+              <Input name="cout_secretariat_heure" type="number" step="0.01" defaultValue={settings?.cout_secretariat_heure ?? 4.66} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Loyer &amp; Charges/Heure (€)</Label>
+              <Input name="loyer_charges_heure" type="number" step="0.01" defaultValue={settings?.loyer_charges_heure ?? 9.61} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Frais Divers Ajustement (€)</Label>
+              <Input name="frais_divers_ajustement" type="number" step="0.01" defaultValue={settings?.frais_divers_ajustement ?? 0} />
+            </div>
+          </div>
+        </div>
+
         <Button type="submit" disabled={settingsLoading}>
-          {settingsLoading ? 'Enregistrement...' : 'Enregistrer'}
+          {settingsLoading ? 'Enregistrement...' : 'Enregistrer la configuration'}
         </Button>
       </form>
 

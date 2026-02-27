@@ -99,6 +99,7 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
         total_hours_recorded: result.totalHoursRecorded,
         driven_hours: result.drivenHours ?? null,
         planned_hours: result.plannedHours ?? null,
+        exams_passed: result.examsPassed ?? 0,
         total_expected_amount: result.totalExpectedAmount,
         total_amount_paid: result.totalAmountPaid,
         remaining_due: result.remainingDue,

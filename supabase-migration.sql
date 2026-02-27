@@ -116,9 +116,7 @@ ALTER TABLE school_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can read own profile" ON profiles
   FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Admins can read all profiles" ON profiles
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  FOR SELECT USING ((auth.jwt()->'app_metadata'->>'role') = 'admin');
 
 -- STUDENTS
 CREATE POLICY "Authenticated users can read students" ON students
@@ -126,21 +124,15 @@ CREATE POLICY "Authenticated users can read students" ON students
 CREATE POLICY "Authenticated users can insert students" ON students
   FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Admins can update students" ON students
-  FOR UPDATE TO authenticated USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  FOR UPDATE TO authenticated USING ((auth.jwt()->'app_metadata'->>'role') = 'admin');
 CREATE POLICY "Admins can delete students" ON students
-  FOR DELETE TO authenticated USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  FOR DELETE TO authenticated USING ((auth.jwt()->'app_metadata'->>'role') = 'admin');
 
 -- CATALOG_PRICES
 CREATE POLICY "Authenticated can read catalog" ON catalog_prices
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Admins manage catalog" ON catalog_prices
-  FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  FOR ALL TO authenticated USING ((auth.jwt()->'app_metadata'->>'role') = 'admin');
 
 -- AI_ANALYSES
 CREATE POLICY "Auth users can read analyses" ON ai_analyses
@@ -150,20 +142,16 @@ CREATE POLICY "Auth users can insert analyses" ON ai_analyses
 CREATE POLICY "Creator or admin can update" ON ai_analyses
   FOR UPDATE TO authenticated USING (
     created_by = auth.uid()
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    OR (auth.jwt()->'app_metadata'->>'role') = 'admin'
   );
 CREATE POLICY "Admins can delete analyses" ON ai_analyses
-  FOR DELETE TO authenticated USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  FOR DELETE TO authenticated USING ((auth.jwt()->'app_metadata'->>'role') = 'admin');
 
 -- SCHOOL_SETTINGS
 CREATE POLICY "Auth read school settings" ON school_settings
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Admins manage school settings" ON school_settings
-  FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  FOR ALL TO authenticated USING ((auth.jwt()->'app_metadata'->>'role') = 'admin');
 
 -- ============================================================
 -- STORAGE BUCKETS (à créer dans Storage > New bucket)

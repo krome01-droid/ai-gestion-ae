@@ -21,6 +21,7 @@ type AnalyseRow = {
   total_hours_recorded: number | null
   driven_hours: number | null
   planned_hours: number | null
+  exams_passed: number | null
   total_expected_amount: number | null
   total_amount_paid: number | null
   remaining_due: number | null
@@ -50,7 +51,7 @@ export default async function AnalyseDetailPage({
 
   const { data: row, error } = await supabase
     .from('ai_analyses')
-    .select('id, student_id, created_by, file_name, file_type, student_name_input, agency, instructor_type, user_comments, ai_extracted_name, total_hours_recorded, driven_hours, planned_hours, total_expected_amount, total_amount_paid, remaining_due, calculated_unit_price, theoretical_catalog_total, revenue_gap, report_status, summary, discrepancies, recommendations, catalog_snapshot, status, is_validated, error_message, created_at, students(full_name)')
+    .select('id, student_id, created_by, file_name, file_type, student_name_input, agency, instructor_type, user_comments, ai_extracted_name, total_hours_recorded, driven_hours, planned_hours, exams_passed, total_expected_amount, total_amount_paid, remaining_due, calculated_unit_price, theoretical_catalog_total, revenue_gap, report_status, summary, discrepancies, recommendations, catalog_snapshot, status, is_validated, error_message, created_at, students(full_name)')
     .eq('id', id)
     .single()
 
@@ -101,6 +102,7 @@ export default async function AnalyseDetailPage({
     totalHoursRecorded: typedRow.total_hours_recorded ?? 0,
     drivenHours: typedRow.driven_hours ?? undefined,
     plannedHours: typedRow.planned_hours ?? undefined,
+    examsPassed: typedRow.exams_passed ?? 0,
     totalExpectedAmount: typedRow.total_expected_amount ?? 0,
     totalAmountPaid: typedRow.total_amount_paid ?? 0,
     remainingDue: typedRow.remaining_due ?? 0,

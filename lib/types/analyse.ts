@@ -5,6 +5,7 @@ export interface AiAnalysisResult {
   totalHoursRecorded: number
   drivenHours?: number
   plannedHours?: number
+  examsPassed?: number
   totalExpectedAmount: number
   totalAmountPaid: number
   remainingDue: number
@@ -37,6 +38,7 @@ export interface AnalysisRecord extends AiAnalysisResult {
   status: 'processing' | 'done' | 'error'
   isValidated: boolean
   createdAt: string
+  examsPassed?: number
 }
 
 export interface SchoolSettings {
@@ -48,4 +50,11 @@ export interface SchoolSettings {
   phone: string | null
   email: string | null
   siret: string | null
+  tauxHoraireSalarie: number | null
+  tauxHoraireIndependant: number | null
+  coutCarburantHeure: number | null
+  assuranceVehiculeHeure: number | null
+  coutSecretariatHeure: number | null
+  loyerChargesHeure: number | null
+  fraisDiversAjustement: number | null
 }

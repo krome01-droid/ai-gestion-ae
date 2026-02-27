@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { formatCurrency } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
-import { TrendingUp, TrendingDown, AlertTriangle, FileSearch } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertTriangle, FileSearch, Clock, GraduationCap } from 'lucide-react'
 
 type AnalyseRow = {
   agency: string | null
@@ -13,6 +13,8 @@ type AnalyseRow = {
   remaining_due: number | null
   revenue_gap: number | null
   calculated_unit_price: number | null
+  driven_hours: number | null
+  exams_passed: number | null
   report_status: string
 }
 
@@ -25,6 +27,8 @@ type AgencyStat = {
   totalReste: number
   totalManque: number
   tauxMoyen: number
+  totalDrivenHours: number
+  totalExams: number
 }
 
 export default async function RentabilitePage() {
@@ -33,14 +37,40 @@ export default async function RentabilitePage() {
   if (!user || user.app_metadata?.role !== 'admin') redirect('/dashboard')
 
   const adminClient = createAdminClient()
-  const { data } = await adminClient
-    .from('ai_analyses')
-    .select('agency, total_expected_amount, total_amount_paid, remaining_due, revenue_gap, calculated_unit_price, report_status')
-    .eq('status', 'done')
+
+  const [{ data }, { data: settingsData }] = await Promise.all([
+    adminClient
+      .from('ai_analyses')
+      .select('agency, total_expected_amount, total_amount_paid, remaining_due, revenue_gap, calculated_unit_price, driven_hours, exams_passed, report_status')
+      .eq('status', 'done'),
+    adminClient
+      .from('school_settings')
+      .select('taux_horaire_salarie, cout_carburant_heure, assurance_vehicule_heure, cout_secretariat_heure, loyer_charges_heure, frais_divers_ajustement')
+      .limit(1)
+      .single(),
+  ])
 
   const rows = (data ?? []) as AnalyseRow[]
 
-  // ── Agrégation par agence ───────────────────────────────────────────────
+  // ── Coût horaire total configuré ────────────────────────────────────────────
+  const s = settingsData as {
+    taux_horaire_salarie: number | null
+    cout_carburant_heure: number | null
+    assurance_vehicule_heure: number | null
+    cout_secretariat_heure: number | null
+    loyer_charges_heure: number | null
+    frais_divers_ajustement: number | null
+  } | null
+
+  const coutHoraire =
+    (s?.taux_horaire_salarie ?? 22.39) +
+    (s?.cout_carburant_heure ?? 2) +
+    (s?.assurance_vehicule_heure ?? 2) +
+    (s?.cout_secretariat_heure ?? 4.66) +
+    (s?.loyer_charges_heure ?? 9.61) +
+    (s?.frais_divers_ajustement ?? 0)
+
+  // ── Agrégation par agence ───────────────────────────────────────────────────
   const agenceMap = new Map<string, AgencyStat>()
 
   for (const row of rows) {
@@ -54,6 +84,8 @@ export default async function RentabilitePage() {
       totalReste: 0,
       totalManque: 0,
       tauxMoyen: 0,
+      totalDrivenHours: 0,
+      totalExams: 0,
     }
     existing.nbAnalyses++
     if (row.report_status === 'DISCREPANCY') existing.nbAnomalies++
@@ -62,6 +94,8 @@ export default async function RentabilitePage() {
     existing.totalReste += row.remaining_due ?? 0
     existing.totalManque += row.revenue_gap ?? 0
     existing.tauxMoyen += row.calculated_unit_price ?? 0
+    existing.totalDrivenHours += row.driven_hours ?? 0
+    existing.totalExams += row.exams_passed ?? 0
     agenceMap.set(key, existing)
   }
 
@@ -69,12 +103,14 @@ export default async function RentabilitePage() {
     .map(s => ({ ...s, tauxMoyen: s.nbAnalyses > 0 ? s.tauxMoyen / s.nbAnalyses : 0 }))
     .sort((a, b) => b.totalManque - a.totalManque)
 
-  // ── KPIs globaux ────────────────────────────────────────────────────────
+  // ── KPIs globaux ─────────────────────────────────────────────────────────────
   const totalAnalyses = rows.length
   const totalFacture = rows.reduce((s, r) => s + (r.total_expected_amount ?? 0), 0)
   const totalManque = rows.reduce((s, r) => s + (r.revenue_gap ?? 0), 0)
   const totalAnomalies = rows.filter(r => r.report_status === 'DISCREPANCY').length
   const pctAnomalies = totalAnalyses > 0 ? Math.round(totalAnomalies / totalAnalyses * 100) : 0
+  const totalDrivenHours = rows.reduce((s, r) => s + (r.driven_hours ?? 0), 0)
+  const totalExams = rows.reduce((s, r) => s + (r.exams_passed ?? 0), 0)
 
   return (
     <div className="p-6 space-y-6">
@@ -84,7 +120,7 @@ export default async function RentabilitePage() {
       </div>
 
       {/* KPIs globaux */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-1">
@@ -122,6 +158,32 @@ export default async function RentabilitePage() {
             <p className="text-xs text-slate-400">{pctAnomalies}% des analyses</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="h-4 w-4 text-indigo-500" />
+              <p className="text-xs uppercase text-slate-500">Heures conduites</p>
+            </div>
+            <p className="text-2xl font-bold text-indigo-700">{totalDrivenHours.toFixed(1)}h</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <GraduationCap className="h-4 w-4 text-violet-500" />
+              <p className="text-xs uppercase text-slate-500">Examens passés</p>
+            </div>
+            <p className="text-2xl font-bold text-violet-700">{totalExams}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Info coût horaire configuré */}
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        Coût horaire configuré (salarié + charges) : <span className="font-semibold text-slate-800">{formatCurrency(coutHoraire)}/h</span>
+        {' · '}Marge estimée = Total payé − (Heures conduites × Coût/h)
+        {' · '}
+        <a href="/settings" className="text-blue-600 underline underline-offset-2">Modifier les coûts</a>
       </div>
 
       {/* Tableau par agence */}
@@ -139,40 +201,49 @@ export default async function RentabilitePage() {
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Agence</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Analyses</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Anomalies</th>
+                <th className="px-4 py-3 text-right font-medium text-slate-500">Heures conduites</th>
+                <th className="px-4 py-3 text-right font-medium text-slate-500">Examens</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Facturé</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Payé</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Reste dû</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Manque</th>
-                <th className="px-4 py-3 text-right font-medium text-slate-500">Taux/h moy.</th>
+                <th className="px-4 py-3 text-right font-medium text-slate-500">Marge estimée</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {stats.map((s) => (
-                <tr key={s.agence} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-900">{s.agence}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{s.nbAnalyses}</td>
-                  <td className="px-4 py-3 text-right">
-                    {s.nbAnomalies > 0
-                      ? <span className="font-medium text-red-600">{s.nbAnomalies}</span>
-                      : <span className="text-slate-400">0</span>}
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(s.totalFacture)}</td>
-                  <td className="px-4 py-3 text-right text-green-700">{formatCurrency(s.totalPaye)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <span className={s.totalReste > 0 ? 'font-semibold text-red-600' : 'text-slate-500'}>
-                      {formatCurrency(s.totalReste)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className={s.totalManque > 0 ? 'font-semibold text-orange-600' : 'text-slate-500'}>
-                      {formatCurrency(s.totalManque)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-700">
-                    {s.tauxMoyen > 0 ? formatCurrency(s.tauxMoyen) : '—'}
-                  </td>
-                </tr>
-              ))}
+              {stats.map((s) => {
+                const margeEstimee = s.totalPaye - (s.totalDrivenHours * coutHoraire)
+                return (
+                  <tr key={s.agence} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-900">{s.agence}</td>
+                    <td className="px-4 py-3 text-right text-slate-700">{s.nbAnalyses}</td>
+                    <td className="px-4 py-3 text-right">
+                      {s.nbAnomalies > 0
+                        ? <span className="font-medium text-red-600">{s.nbAnomalies}</span>
+                        : <span className="text-slate-400">0</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right text-indigo-700 font-medium">{s.totalDrivenHours.toFixed(1)}h</td>
+                    <td className="px-4 py-3 text-right text-violet-700">{s.totalExams}</td>
+                    <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(s.totalFacture)}</td>
+                    <td className="px-4 py-3 text-right text-green-700">{formatCurrency(s.totalPaye)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={s.totalReste > 0 ? 'font-semibold text-red-600' : 'text-slate-500'}>
+                        {formatCurrency(s.totalReste)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={s.totalManque > 0 ? 'font-semibold text-orange-600' : 'text-slate-500'}>
+                        {formatCurrency(s.totalManque)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={margeEstimee >= 0 ? 'font-semibold text-green-700' : 'font-semibold text-red-600'}>
+                        {formatCurrency(margeEstimee)}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

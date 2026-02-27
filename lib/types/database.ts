@@ -123,6 +123,7 @@ export type Database = {
                     is_validated: boolean
                     validated_at: string | null
                     validated_by: string | null
+                    exams_passed: number | null
                     error_message: string | null
                     created_at: string
                 }
@@ -155,6 +156,7 @@ export type Database = {
                     is_validated?: boolean
                     validated_at?: string | null
                     validated_by?: string | null
+                    exams_passed?: number | null
                     error_message?: string | null
                     created_at?: string
                 }
@@ -187,6 +189,7 @@ export type Database = {
                     is_validated?: boolean
                     validated_at?: string | null
                     validated_by?: string | null
+                    exams_passed?: number | null
                     error_message?: string | null
                     created_at?: string
                 }
@@ -217,6 +220,13 @@ export type Database = {
                     phone: string | null
                     email: string | null
                     siret: string | null
+                    taux_horaire_salarie: number | null
+                    taux_horaire_independant: number | null
+                    cout_carburant_heure: number | null
+                    assurance_vehicule_heure: number | null
+                    cout_secretariat_heure: number | null
+                    loyer_charges_heure: number | null
+                    frais_divers_ajustement: number | null
                     created_at: string
                     updated_at: string
                 }
@@ -229,6 +239,13 @@ export type Database = {
                     phone?: string | null
                     email?: string | null
                     siret?: string | null
+                    taux_horaire_salarie?: number | null
+                    taux_horaire_independant?: number | null
+                    cout_carburant_heure?: number | null
+                    assurance_vehicule_heure?: number | null
+                    cout_secretariat_heure?: number | null
+                    loyer_charges_heure?: number | null
+                    frais_divers_ajustement?: number | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -241,6 +258,13 @@ export type Database = {
                     phone?: string | null
                     email?: string | null
                     siret?: string | null
+                    taux_horaire_salarie?: number | null
+                    taux_horaire_independant?: number | null
+                    cout_carburant_heure?: number | null
+                    assurance_vehicule_heure?: number | null
+                    cout_secretariat_heure?: number | null
+                    loyer_charges_heure?: number | null
+                    frais_divers_ajustement?: number | null
                     created_at?: string
                     updated_at?: string
                 }

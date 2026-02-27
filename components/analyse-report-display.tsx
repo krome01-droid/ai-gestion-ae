@@ -8,7 +8,6 @@ import type { AnalysisRecord } from '@/lib/types/analyse'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import {
   CheckCircle2,
   AlertTriangle,
@@ -18,7 +17,7 @@ import {
   TrendingUp,
   TrendingDown,
   ShieldCheck,
-  FileDown,
+  GraduationCap,
 } from 'lucide-react'
 import { AnalysePdfButton } from './analyse-pdf-button'
 
@@ -165,9 +164,10 @@ export function AnalyseReportDisplay({ analysis, isAdmin }: AnalyseReportDisplay
           danger={analysis.revenueGap > 100}
         />
         <KpiBox
-          label="Fichier"
-          value={analysis.fileName}
-          sub={analysis.agence ?? undefined}
+          label="Examens passés"
+          value={String(analysis.examsPassed ?? 0)}
+          sub="examen(s) code + conduite"
+          icon={GraduationCap}
         />
       </div>
 

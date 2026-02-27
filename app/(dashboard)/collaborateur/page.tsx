@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { FileSearch, Plus, AlertTriangle, TrendingDown } from 'lucide-react'
+import { FileSearch, Plus, AlertTriangle, TrendingDown, GraduationCap } from 'lucide-react'
 
 const STATUS_LABELS = {
   VERIFIED: { label: 'Conforme', className: 'bg-green-100 text-green-700 hover:bg-green-100' },
@@ -21,7 +21,7 @@ export default async function CollaborateurPage() {
   const adminClient = createAdminClient()
   const { data: analyses } = await adminClient
     .from('ai_analyses')
-    .select('id, student_name_input, ai_extracted_name, file_name, agency, report_status, remaining_due, created_at')
+    .select('id, student_name_input, ai_extracted_name, file_name, agency, report_status, remaining_due, exams_passed, created_at')
     .eq('created_by', user!.id)
     .eq('status', 'done')
     .order('created_at', { ascending: false })
@@ -30,6 +30,7 @@ export default async function CollaborateurPage() {
   const nbAnalyses = all.length
   const nbAnomalies = all.filter(a => a.report_status === 'DISCREPANCY').length
   const totalReste = all.reduce((s, a) => s + ((a.remaining_due as number) ?? 0), 0)
+  const totalExams = all.reduce((s, a) => s + ((a.exams_passed as number) ?? 0), 0)
   const recent = all.slice(0, 10)
 
   return (
@@ -48,7 +49,7 @@ export default async function CollaborateurPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-1">
@@ -79,6 +80,15 @@ export default async function CollaborateurPage() {
             <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalReste)}</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <GraduationCap className="h-4 w-4 text-violet-500" />
+              <p className="text-xs uppercase text-slate-500">Examens passés</p>
+            </div>
+            <p className="text-2xl font-bold text-violet-700">{totalExams}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Dernières analyses */}
@@ -101,6 +111,7 @@ export default async function CollaborateurPage() {
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Élève</th>
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Agence</th>
+                <th className="px-4 py-3 text-left font-medium text-slate-500">Examens</th>
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Reste dû</th>
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Statut</th>
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Date</th>
@@ -116,6 +127,7 @@ export default async function CollaborateurPage() {
                       {(a.ai_extracted_name as string) || (a.student_name_input as string) || (a.file_name as string)}
                     </td>
                     <td className="px-4 py-3 text-slate-500">{(a.agency as string) ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-700">{(a.exams_passed as number) ?? 0}</td>
                     <td className="px-4 py-3">
                       <span className={(a.remaining_due as number) > 0 ? 'font-semibold text-red-600' : 'text-slate-500'}>
                         {(a.remaining_due as number) != null ? formatCurrency(a.remaining_due as number) : '—'}

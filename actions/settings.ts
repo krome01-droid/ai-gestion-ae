@@ -17,6 +17,13 @@ export async function updateSchoolSettings(formData: FormData) {
     email: (formData.get('email') as string) || null,
     siret: (formData.get('siret') as string) || null,
     tva_rate: parseFloat((formData.get('tva_rate') as string) || '0'),
+    taux_horaire_salarie:     parseFloat((formData.get('taux_horaire_salarie')     as string) || '22.39'),
+    taux_horaire_independant: parseFloat((formData.get('taux_horaire_independant') as string) || '33.25'),
+    cout_carburant_heure:     parseFloat((formData.get('cout_carburant_heure')     as string) || '2'),
+    assurance_vehicule_heure: parseFloat((formData.get('assurance_vehicule_heure') as string) || '2'),
+    cout_secretariat_heure:   parseFloat((formData.get('cout_secretariat_heure')   as string) || '4.66'),
+    loyer_charges_heure:      parseFloat((formData.get('loyer_charges_heure')      as string) || '9.61'),
+    frais_divers_ajustement:  parseFloat((formData.get('frais_divers_ajustement')  as string) || '0'),
     updated_at: new Date().toISOString(),
   }
 

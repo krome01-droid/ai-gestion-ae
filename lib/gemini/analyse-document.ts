@@ -41,6 +41,8 @@ Analyser le dossier élève pour extraire les métriques financières et compare
 
 4. **Prix Unitaire Constaté** : Total Payé / Total Heures (Effectuées + Planifiées).
 
+5. **Examens** : Comptez le nombre total d'examens passés par l'élève (code de la route + conduite, tous types combinés).
+
 ### RÈGLES DE CONTRÔLE
 - **Alerte** : Si le "Prix Unitaire Constaté" est inférieur de plus de 10% au "Taux Horaire Catalogue", c'est une anomalie critique.
 `
@@ -64,6 +66,10 @@ const REPORT_SCHEMA: Schema = {
     plannedHours: {
       type: Type.NUMBER,
       description: "Nombre d'heures planifiées dans le futur (non encore conduites).",
+    },
+    examsPassed: {
+      type: Type.INTEGER,
+      description: "Nombre total d'examens passés par l'élève (code de la route + conduite, tous types combinés).",
     },
     totalExpectedAmount: {
       type: Type.NUMBER,
@@ -110,6 +116,7 @@ const REPORT_SCHEMA: Schema = {
   },
   required: [
     'totalHoursRecorded',
+    'examsPassed',
     'totalExpectedAmount',
     'totalAmountPaid',
     'remainingDue',           // Présent dans required — fix par rapport à comptadrive-audit
