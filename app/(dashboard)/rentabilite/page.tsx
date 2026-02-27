@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { formatCurrency } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
-import { TrendingUp, TrendingDown, AlertTriangle, FileSearch, Clock, GraduationCap } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertTriangle, FileSearch, Clock, GraduationCap, Banknote, Receipt, Percent, Calculator } from 'lucide-react'
 
 type AnalyseRow = {
   agency: string | null
@@ -106,11 +106,17 @@ export default async function RentabilitePage() {
   // ── KPIs globaux ─────────────────────────────────────────────────────────────
   const totalAnalyses = rows.length
   const totalFacture = rows.reduce((s, r) => s + (r.total_expected_amount ?? 0), 0)
+  const totalPaye = rows.reduce((s, r) => s + (r.total_amount_paid ?? 0), 0)
   const totalManque = rows.reduce((s, r) => s + (r.revenue_gap ?? 0), 0)
   const totalAnomalies = rows.filter(r => r.report_status === 'DISCREPANCY').length
   const pctAnomalies = totalAnalyses > 0 ? Math.round(totalAnomalies / totalAnalyses * 100) : 0
   const totalDrivenHours = rows.reduce((s, r) => s + (r.driven_hours ?? 0), 0)
   const totalExams = rows.reduce((s, r) => s + (r.exams_passed ?? 0), 0)
+
+  // ── Calculs rentabilité globaux ───────────────────────────────────────────────
+  const prixDeRevientGlobal = totalDrivenHours * coutHoraire
+  const margeGlobale = totalPaye - prixDeRevientGlobal
+  const tauxMarge = totalPaye > 0 ? (margeGlobale / totalPaye) * 100 : 0
 
   return (
     <div className="p-6 space-y-6">
@@ -119,7 +125,7 @@ export default async function RentabilitePage() {
         <p className="text-sm text-slate-500">Synthèse financière par agence</p>
       </div>
 
-      {/* KPIs globaux */}
+      {/* KPIs — Ligne 1 : Activité */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <Card>
           <CardContent className="pt-4">
@@ -142,20 +148,19 @@ export default async function RentabilitePage() {
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingDown className="h-4 w-4 text-orange-500" />
-              <p className="text-xs uppercase text-slate-500">Manque à gagner</p>
+              <Banknote className="h-4 w-4 text-emerald-500" />
+              <p className="text-xs uppercase text-slate-500">Total encaissé</p>
             </div>
-            <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalManque)}</p>
+            <p className="text-2xl font-bold text-emerald-700">{formatCurrency(totalPaye)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="h-4 w-4 text-red-500" />
-              <p className="text-xs uppercase text-slate-500">Anomalies</p>
+              <TrendingDown className="h-4 w-4 text-orange-500" />
+              <p className="text-xs uppercase text-slate-500">Manque à gagner</p>
             </div>
-            <p className="text-2xl font-bold text-red-600">{totalAnomalies}</p>
-            <p className="text-xs text-slate-400">{pctAnomalies}% des analyses</p>
+            <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalManque)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -170,20 +175,72 @@ export default async function RentabilitePage() {
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <p className="text-xs uppercase text-slate-500">Anomalies</p>
+            </div>
+            <p className="text-2xl font-bold text-red-600">{totalAnomalies}</p>
+            <p className="text-xs text-slate-400">{pctAnomalies}% des analyses</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* KPIs — Ligne 2 : Rentabilité */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-5">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Receipt className="h-4 w-4 text-slate-500" />
+              <p className="text-xs uppercase text-slate-500">Prix de revient global</p>
+            </div>
+            <p className="text-2xl font-bold text-slate-700">{formatCurrency(prixDeRevientGlobal)}</p>
+            <p className="text-xs text-slate-400">{totalDrivenHours.toFixed(1)}h × {formatCurrency(coutHoraire)}/h</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Calculator className="h-4 w-4 text-slate-500" />
+              <p className="text-xs uppercase text-slate-500">Prix de revient/h</p>
+            </div>
+            <p className="text-2xl font-bold text-slate-700">{formatCurrency(coutHoraire)}</p>
+            <p className="text-xs text-slate-400">
+              <a href="/settings" className="text-blue-600 underline underline-offset-2">Modifier</a>
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="h-4 w-4 text-teal-500" />
+              <p className="text-xs uppercase text-slate-500">Marge globale</p>
+            </div>
+            <p className={`text-2xl font-bold ${margeGlobale >= 0 ? 'text-teal-700' : 'text-red-600'}`}>
+              {formatCurrency(margeGlobale)}
+            </p>
+            <p className="text-xs text-slate-400">Encaissé − Prix de revient</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Percent className="h-4 w-4 text-teal-500" />
+              <p className="text-xs uppercase text-slate-500">Taux de marge</p>
+            </div>
+            <p className={`text-2xl font-bold ${tauxMarge >= 0 ? 'text-teal-700' : 'text-red-600'}`}>
+              {tauxMarge.toFixed(1)}%
+            </p>
+            <p className="text-xs text-slate-400">Marge / Encaissé</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
               <GraduationCap className="h-4 w-4 text-violet-500" />
               <p className="text-xs uppercase text-slate-500">Examens passés</p>
             </div>
             <p className="text-2xl font-bold text-violet-700">{totalExams}</p>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Info coût horaire configuré */}
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-        Coût horaire configuré (salarié + charges) : <span className="font-semibold text-slate-800">{formatCurrency(coutHoraire)}/h</span>
-        {' · '}Marge estimée = Total payé − (Heures conduites × Coût/h)
-        {' · '}
-        <a href="/settings" className="text-blue-600 underline underline-offset-2">Modifier les coûts</a>
       </div>
 
       {/* Tableau par agence */}
@@ -194,25 +251,29 @@ export default async function RentabilitePage() {
           <p className="mt-1 text-sm text-slate-400">Lancez des analyses pour voir la rentabilité.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-white">
+        <div className="overflow-x-auto rounded-xl border bg-white">
           <table className="w-full text-sm">
             <thead className="border-b bg-slate-50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Agence</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Analyses</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Anomalies</th>
-                <th className="px-4 py-3 text-right font-medium text-slate-500">Heures conduites</th>
+                <th className="px-4 py-3 text-right font-medium text-slate-500">Heures</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Examens</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Facturé</th>
-                <th className="px-4 py-3 text-right font-medium text-slate-500">Payé</th>
+                <th className="px-4 py-3 text-right font-medium text-slate-500">Encaissé</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Reste dû</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-500">Manque</th>
-                <th className="px-4 py-3 text-right font-medium text-slate-500">Marge estimée</th>
+                <th className="px-4 py-3 text-right font-medium text-slate-500">Prix de revient</th>
+                <th className="px-4 py-3 text-right font-medium text-slate-500">Marge</th>
+                <th className="px-4 py-3 text-right font-medium text-slate-500">Taux marge</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {stats.map((s) => {
-                const margeEstimee = s.totalPaye - (s.totalDrivenHours * coutHoraire)
+                const prixRevient = s.totalDrivenHours * coutHoraire
+                const marge = s.totalPaye - prixRevient
+                const taux = s.totalPaye > 0 ? (marge / s.totalPaye) * 100 : 0
                 return (
                   <tr key={s.agence} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-900">{s.agence}</td>
@@ -225,7 +286,7 @@ export default async function RentabilitePage() {
                     <td className="px-4 py-3 text-right text-indigo-700 font-medium">{s.totalDrivenHours.toFixed(1)}h</td>
                     <td className="px-4 py-3 text-right text-violet-700">{s.totalExams}</td>
                     <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(s.totalFacture)}</td>
-                    <td className="px-4 py-3 text-right text-green-700">{formatCurrency(s.totalPaye)}</td>
+                    <td className="px-4 py-3 text-right text-emerald-700 font-medium">{formatCurrency(s.totalPaye)}</td>
                     <td className="px-4 py-3 text-right">
                       <span className={s.totalReste > 0 ? 'font-semibold text-red-600' : 'text-slate-500'}>
                         {formatCurrency(s.totalReste)}
@@ -236,9 +297,15 @@ export default async function RentabilitePage() {
                         {formatCurrency(s.totalManque)}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-right text-slate-600">{formatCurrency(prixRevient)}</td>
                     <td className="px-4 py-3 text-right">
-                      <span className={margeEstimee >= 0 ? 'font-semibold text-green-700' : 'font-semibold text-red-600'}>
-                        {formatCurrency(margeEstimee)}
+                      <span className={marge >= 0 ? 'font-semibold text-teal-700' : 'font-semibold text-red-600'}>
+                        {formatCurrency(marge)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={taux >= 0 ? 'font-semibold text-teal-700' : 'font-semibold text-red-600'}>
+                        {taux.toFixed(1)}%
                       </span>
                     </td>
                   </tr>
