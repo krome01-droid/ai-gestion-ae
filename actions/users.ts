@@ -36,3 +36,27 @@ export async function deleteUser(userId: string) {
   revalidatePath('/users')
   return { success: true }
 }
+
+export async function createUser(formData: FormData) {
+  const me = await assertAdmin()
+  if (!me) return { error: 'Non autorisé' }
+
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  const role = (formData.get('role') as string) || 'user'
+
+  if (!email || !password) return { error: 'Email et mot de passe requis' }
+  if (password.length < 6) return { error: 'Mot de passe minimum 6 caractères' }
+
+  const adminClient = createAdminClient()
+  const { error } = await adminClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    app_metadata: { role },
+  })
+
+  if (error) return { error: error.message }
+  revalidatePath('/users')
+  return { success: true }
+}

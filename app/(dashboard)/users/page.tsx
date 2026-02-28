@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { UserActionsButtons } from '@/components/user-actions-buttons'
+import { CreateUserDialog } from '@/components/create-user-dialog'
 import { Badge } from '@/components/ui/badge'
 import { UserCog } from 'lucide-react'
 
@@ -33,6 +34,7 @@ export default async function UsersPage() {
           <h1 className="text-2xl font-bold text-slate-900">Utilisateurs</h1>
           <p className="text-sm text-slate-500">{sorted.length} compte(s) enregistré(s)</p>
         </div>
+        <CreateUserDialog />
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-white">
