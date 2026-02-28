@@ -1,11 +1,12 @@
 export const dynamic = 'force-dynamic'
 
-import { createAdminClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Plus, FileSearch } from 'lucide-react'
+import { AnalyseDeleteButton } from '@/components/analyse-delete-button'
 
 const STATUS_LABELS = {
   VERIFIED: { label: 'Conforme', className: 'bg-green-100 text-green-700 hover:bg-green-100' },
@@ -14,7 +15,11 @@ const STATUS_LABELS = {
 }
 
 export default async function AnalyseListPage() {
-  const adminClient = await createAdminClient()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const isAdmin = user?.app_metadata?.role === 'admin'
+
+  const adminClient = createAdminClient()
 
   const { data: analyses } = await adminClient
     .from('ai_analyses')
@@ -63,10 +68,11 @@ export default async function AnalyseListPage() {
             <tbody className="divide-y">
               {analyses.map((a) => {
                 const s = STATUS_LABELS[a.report_status as keyof typeof STATUS_LABELS] ?? STATUS_LABELS.UNCERTAIN
+                const name = a.ai_extracted_name || a.student_name_input || a.file_name
                 return (
                   <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-900">
-                      {a.ai_extracted_name || a.student_name_input || a.file_name}
+                      {name}
                       {a.is_validated && (
                         <span className="ml-2 text-xs text-green-600">✓</span>
                       )}
@@ -85,9 +91,14 @@ export default async function AnalyseListPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-500">{formatDate(a.created_at)}</td>
                     <td className="px-4 py-3">
-                      <Button asChild size="sm" variant="ghost">
-                        <Link href={`/analyse/${a.id}`}>Voir</Link>
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button asChild size="sm" variant="ghost">
+                          <Link href={`/analyse/${a.id}`}>Voir</Link>
+                        </Button>
+                        {isAdmin && (
+                          <AnalyseDeleteButton id={a.id} name={name} />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
