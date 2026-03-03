@@ -11,7 +11,7 @@ export default async function SettingsPage() {
 
   const { data: settings } = await supabase
     .from('school_settings')
-    .select('id, school_name, logo_url, tva_rate, address, phone, email, siret, taux_horaire_salarie, taux_horaire_independant, cout_carburant_heure, assurance_vehicule_heure, cout_secretariat_heure, loyer_charges_heure, frais_divers_ajustement')
+    .select('id, school_name, logo_url, tva_rate, address, phone, email, siret, taux_horaire_salarie, taux_horaire_independant, cout_carburant_heure, assurance_vehicule_heure, cout_secretariat_heure, loyer_charges_heure, frais_divers_ajustement, ai_software_name, ai_custom_instructions, ai_system_prompt')
     .limit(1)
     .maybeSingle()
 

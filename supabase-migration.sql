@@ -165,6 +165,20 @@ CREATE POLICY "Admins manage school settings" ON school_settings
 -- Bucket "school-assets" (Public) pour les logos
 -- Bucket "uploaded-files" (Private) pour les fichiers uploadés
 
+-- ============================================================
+-- COLONNES IA (à exécuter si la table school_settings existe déjà)
+-- ============================================================
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS taux_horaire_salarie     NUMERIC(8,2);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS taux_horaire_independant  NUMERIC(8,2);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS cout_carburant_heure      NUMERIC(8,2);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS assurance_vehicule_heure  NUMERIC(8,2);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS cout_secretariat_heure    NUMERIC(8,2);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS loyer_charges_heure       NUMERIC(8,2);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS frais_divers_ajustement   NUMERIC(8,2);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS ai_software_name          TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS ai_custom_instructions    TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS ai_system_prompt          TEXT;
+
 -- Insérer les paramètres par défaut
 INSERT INTO school_settings (school_name) VALUES ('Mon Auto-École')
 ON CONFLICT DO NOTHING;

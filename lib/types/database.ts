@@ -227,6 +227,9 @@ export type Database = {
                     cout_secretariat_heure: number | null
                     loyer_charges_heure: number | null
                     frais_divers_ajustement: number | null
+                    ai_software_name: string | null
+                    ai_custom_instructions: string | null
+                    ai_system_prompt: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -246,6 +249,9 @@ export type Database = {
                     cout_secretariat_heure?: number | null
                     loyer_charges_heure?: number | null
                     frais_divers_ajustement?: number | null
+                    ai_software_name?: string | null
+                    ai_custom_instructions?: string | null
+                    ai_system_prompt?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -265,6 +271,9 @@ export type Database = {
                     cout_secretariat_heure?: number | null
                     loyer_charges_heure?: number | null
                     frais_divers_ajustement?: number | null
+                    ai_software_name?: string | null
+                    ai_custom_instructions?: string | null
+                    ai_system_prompt?: string | null
                     created_at?: string
                     updated_at?: string
                 }

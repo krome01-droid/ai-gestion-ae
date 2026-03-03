@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Schema } from '@google/genai'
-import type { AiAnalysisResult } from '@/lib/types/analyse'
+import type { AiAnalysisResult, AiSettings } from '@/lib/types/analyse'
 
 // ── System Prompt (Expert-Comptable Auto-École) ────────────────────────────
 const SYSTEM_INSTRUCTION = `
@@ -167,15 +167,35 @@ export interface AnalyseContext {
 
 export async function analyseDocument(
   files: File[],
-  context: AnalyseContext
+  context: AnalyseContext,
+  aiSettings?: AiSettings
 ): Promise<AiAnalysisResult> {
   const apiKey = process.env.GOOGLE_GEMINI_API_KEY
   if (!apiKey) throw new Error('GOOGLE_GEMINI_API_KEY manquante')
 
   const ai = new GoogleGenAI({ apiKey })
 
+  // Construire le system instruction selon les réglages IA
+  let systemInstruction = SYSTEM_INSTRUCTION
+
+  if (aiSettings?.systemPrompt?.trim()) {
+    // Prompt complet personnalisé → remplace entièrement le défaut
+    systemInstruction = aiSettings.systemPrompt
+  } else {
+    // Logiciel de gestion : préfixe
+    if (aiSettings?.softwareName?.trim()) {
+      systemInstruction =
+        `### LOGICIEL DE GESTION\nCe dossier provient du logiciel **${aiSettings.softwareName}**. Adaptez l'interprétation des colonnes et des termes en conséquence.\n\n`
+        + systemInstruction
+    }
+    // Instructions personnalisées : suffixe
+    if (aiSettings?.customInstructions?.trim()) {
+      systemInstruction += `\n\n### RÈGLES SPÉCIFIQUES\n${aiSettings.customInstructions}`
+    }
+  }
+
   const fullSystemInstruction =
-    SYSTEM_INSTRUCTION +
+    systemInstruction +
     `\n\n### CATALOGUE OFFICIEL ACTUEL\n${context.catalogContext}`
 
   const parts: Array<{ inlineData: { mimeType: string; data: string } } | { text: string }> = []

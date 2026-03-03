@@ -57,4 +57,13 @@ export interface SchoolSettings {
   coutSecretariatHeure: number | null
   loyerChargesHeure: number | null
   fraisDiversAjustement: number | null
+  aiSoftwareName: string | null
+  aiCustomInstructions: string | null
+  aiSystemPrompt: string | null
+}
+
+export interface AiSettings {
+  softwareName?: string | null
+  customInstructions?: string | null
+  systemPrompt?: string | null
 }

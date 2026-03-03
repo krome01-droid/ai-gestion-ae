@@ -76,21 +76,34 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
     // 2. Récupérer le catalogue actuel
     const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
 
-    // 3. Appeler Gemini
+    // 3. Récupérer les réglages IA
+    const { data: aiSettingsData } = await adminClient
+      .from('school_settings')
+      .select('ai_software_name, ai_custom_instructions, ai_system_prompt')
+      .limit(1)
+      .single()
+
+    const aiSettings = aiSettingsData ? {
+      softwareName: aiSettingsData.ai_software_name,
+      customInstructions: aiSettingsData.ai_custom_instructions,
+      systemPrompt: aiSettingsData.ai_system_prompt,
+    } : undefined
+
+    // 4. Appeler Gemini
     const result = await analyseDocument(files, {
       studentName: studentNameInput ?? undefined,
       userComments: userComments ?? undefined,
       catalogContext,
-    })
+    }, aiSettings)
 
-    // 4. Trouver ou créer l'élève
+    // 5. Trouver ou créer l'élève
     const studentName = result.aiExtractedName || studentNameInput
     let studentId: string | null = null
     if (studentName) {
       studentId = await findOrCreateStudent(studentName)
     }
 
-    // 5. Mettre à jour l'analyse avec les résultats
+    // 6. Mettre à jour l'analyse avec les résultats
     await adminClient
       .from('ai_analyses')
       .update({

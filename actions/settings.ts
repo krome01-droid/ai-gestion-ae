@@ -24,6 +24,9 @@ export async function updateSchoolSettings(formData: FormData) {
     cout_secretariat_heure:   parseFloat((formData.get('cout_secretariat_heure')   as string) || '4.66'),
     loyer_charges_heure:      parseFloat((formData.get('loyer_charges_heure')      as string) || '9.61'),
     frais_divers_ajustement:  parseFloat((formData.get('frais_divers_ajustement')  as string) || '0'),
+    ai_software_name:       (formData.get('ai_software_name')       as string) || null,
+    ai_custom_instructions: (formData.get('ai_custom_instructions') as string) || null,
+    ai_system_prompt:       (formData.get('ai_system_prompt')       as string) || null,
     updated_at: new Date().toISOString(),
   }
 

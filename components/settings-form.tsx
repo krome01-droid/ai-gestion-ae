@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
+import { Bot } from 'lucide-react'
 
 interface SettingsData {
   school_name?: string | null
@@ -23,6 +25,9 @@ interface SettingsData {
   cout_secretariat_heure?: number | null
   loyer_charges_heure?: number | null
   frais_divers_ajustement?: number | null
+  ai_software_name?: string | null
+  ai_custom_instructions?: string | null
+  ai_system_prompt?: string | null
 }
 
 export function SettingsForm({ settings }: { settings: SettingsData | null }) {
@@ -116,6 +121,54 @@ export function SettingsForm({ settings }: { settings: SettingsData | null }) {
               <Input name="frais_divers_ajustement" type="number" step="0.01" defaultValue={settings?.frais_divers_ajustement ?? 0} />
             </div>
           </div>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2">
+              <Bot className="h-4 w-4" /> Configuration IA d&apos;Analyse
+            </p>
+            <p className="text-xs text-slate-500">Personnalisez l&apos;IA pour améliorer la précision des rapports.</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Logiciel de gestion utilisé</Label>
+            <Input
+              name="ai_software_name"
+              placeholder="Ex: Klaxo, EDIFER, iCar..."
+              defaultValue={settings?.ai_software_name ?? ''}
+            />
+            <p className="text-xs text-slate-400">Aide l&apos;IA à interpréter le format de vos documents.</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Instructions personnalisées</Label>
+            <Textarea
+              name="ai_custom_instructions"
+              rows={5}
+              placeholder="Ex: Dans notre auto-école, les leçons de 45 min comptent comme 1h. Les forfaits CPF ne génèrent pas de reste à payer..."
+              defaultValue={settings?.ai_custom_instructions ?? ''}
+            />
+            <p className="text-xs text-slate-400">Règles ajoutées au prompt par défaut.</p>
+          </div>
+
+          <details className="space-y-1">
+            <summary className="text-xs font-medium text-slate-600 cursor-pointer select-none">
+              ⚙️ Prompt système complet (avancé — remplace tout)
+            </summary>
+            <div className="mt-2 space-y-1.5">
+              <Textarea
+                name="ai_system_prompt"
+                rows={12}
+                className="font-mono text-xs"
+                placeholder="Laisser vide pour utiliser le prompt par défaut..."
+                defaultValue={settings?.ai_system_prompt ?? ''}
+              />
+              <p className="text-xs text-orange-500">⚠️ Si renseigné, remplace entièrement le prompt par défaut.</p>
+            </div>
+          </details>
         </div>
 
         <Button type="submit" disabled={settingsLoading}>
