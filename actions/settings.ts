@@ -10,7 +10,7 @@ export async function updateSchoolSettings(formData: FormData) {
 
   const { data: existing } = await supabase.from('school_settings').select('id').limit(1).single()
 
-  const updates = {
+  const baseUpdates = {
     school_name: formData.get('school_name') as string,
     address: (formData.get('address') as string) || null,
     phone: (formData.get('phone') as string) || null,
@@ -24,17 +24,22 @@ export async function updateSchoolSettings(formData: FormData) {
     cout_secretariat_heure:   parseFloat((formData.get('cout_secretariat_heure')   as string) || '4.66'),
     loyer_charges_heure:      parseFloat((formData.get('loyer_charges_heure')      as string) || '9.61'),
     frais_divers_ajustement:  parseFloat((formData.get('frais_divers_ajustement')  as string) || '0'),
-    ai_software_name:       (formData.get('ai_software_name')       as string) || null,
-    ai_custom_instructions: (formData.get('ai_custom_instructions') as string) || null,
-    ai_system_prompt:       (formData.get('ai_system_prompt')       as string) || null,
     updated_at: new Date().toISOString(),
   }
 
+  const aiUpdates = {
+    ai_software_name:       (formData.get('ai_software_name')       as string) || null,
+    ai_custom_instructions: (formData.get('ai_custom_instructions') as string) || null,
+    ai_system_prompt:       (formData.get('ai_system_prompt')       as string) || null,
+  }
+
   if (existing) {
-    const { error } = await supabase.from('school_settings').update(updates).eq('id', existing.id)
+    const { error } = await supabase.from('school_settings').update(baseUpdates).eq('id', existing.id)
     if (error) return { error: error.message }
+    // Sauvegarde des champs IA (silencieuse si colonnes pas encore créées)
+    await supabase.from('school_settings').update(aiUpdates).eq('id', existing.id)
   } else {
-    const { error } = await supabase.from('school_settings').insert(updates)
+    const { error } = await supabase.from('school_settings').insert(baseUpdates)
     if (error) return { error: error.message }
   }
 
