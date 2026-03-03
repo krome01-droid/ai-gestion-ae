@@ -45,6 +45,34 @@ Pour chaque leçon planifiée, vérifiez les 3 points suivants et signalez toute
 **C. COHÉRENCE** : Le nombre d'heures planifiées × prix catalogue correspond-il au montant ajouté au Total Facturé ?
    - Écart > 5% → ANOMALIE : "Incohérence de facturation sur les heures planifiées"
 
+### DÉTECTION DES PRESTATIONS NON FACTURÉES (CRITIQUE)
+
+Comparez systématiquement CHAQUE prestation consommée ou réservée par l'élève avec le Total Facturé.
+
+**Types de prestations à vérifier** :
+- Leçons de conduite passées (effectuées) → chaque leçon doit figurer dans la facturation
+- Leçons planifiées / futures → doivent être facturées dès la réservation
+- Évaluation de départ → prestation à part, doit être facturée si elle a eu lieu
+- Examens code ou conduite → passage d'examen est une prestation facturable
+- Frais de dossier, frais administratifs → doivent apparaître en facturation
+- Remises, forfaits ou packages → vérifier que le montant facturé correspond au forfait souscrit
+
+**Méthode de détection** :
+1. Dressez la liste de TOUTES les prestations identifiées dans le document (leçons, examens, frais…)
+2. Pour chacune, vérifiez qu'elle apparaît bien dans les lignes de facturation
+3. Si une prestation est consommée/réservée mais ABSENTE de la facturation → c'est une prestation non facturée
+4. Calculez le montant estimé manquant (quantité × prix catalogue)
+
+**Format obligatoire dans "discrepancies"** pour chaque prestation non facturée :
+"📋 NON FACTURÉ — [Nom de la prestation] ([quantité/durée]) du [date si connue] : [montant estimé]€ manquant à facturer"
+
+Exemples :
+- "📋 NON FACTURÉ — Leçon de conduite (1h) du 12/02 : 42€ manquant à facturer"
+- "📋 NON FACTURÉ — Passage examen conduite (1) : 30€ manquant à facturer"
+- "📋 NON FACTURÉ — Frais de dossier : 35€ manquant à facturer"
+
+Si TOUTES les prestations sont correctement facturées → ne pas ajouter d'entrée "📋 NON FACTURÉ" et indiquer dans le résumé que la facturation est complète.
+
 ### CALCULS REQUIS
 
 1. **Analyse des Heures** :
@@ -70,14 +98,21 @@ Pour chaque leçon planifiée, vérifiez les 3 points suivants et signalez toute
 
 - 🔴 **CRITIQUE** : Si le "Prix Unitaire Constaté" est inférieur de plus de 10% au "Taux Horaire Catalogue".
 - 🔴 **CRITIQUE** : Si des leçons planifiées sont absentes du "Total Facturé".
+- 🔴 **CRITIQUE** : Si des prestations consommées (leçons passées, examens, frais) sont absentes de la facturation.
 - 🟠 **ANOMALIE** : Si le "Reste à Payer" est positif ET que des leçons planifiées existent (risque de non-recouvrement).
 - 🟠 **ANOMALIE** : Si le nombre d'heures planifiées × prix catalogue ne correspond pas au supplément facturé.
 - 🟡 **ATTENTION** : Si l'élève a des leçons planifiées mais aucun paiement récent (risque d'impayé futur).
+- 🟡 **ATTENTION** : Si un forfait a été souscrit mais que certaines prestations incluses n'apparaissent pas.
 
-### FORMAT DES ANOMALIES
-Dans le champ "discrepancies", formulez chaque anomalie ainsi :
-"[TYPE] — [Description précise avec montants et dates si disponibles]"
-Exemple : "🔴 CRITIQUE — 3 leçons planifiées (1,5h total) du 15/03 non facturées : manque à facturer estimé à 63€"
+### FORMAT UNIFORME DES ANOMALIES (champ "discrepancies")
+Chaque entrée doit suivre ce format : "[EMOJI TYPE] — [Description précise avec montants et dates]"
+
+Exemples :
+- "🔴 CRITIQUE — 3 leçons planifiées (1,5h) du 15/03 non facturées : 63€ manquants"
+- "🔴 CRITIQUE — Passage examen conduite non facturé : 30€ manquants"
+- "📋 NON FACTURÉ — Leçon de conduite (1h) du 08/02 : 42€ manquants à facturer"
+- "📋 NON FACTURÉ — Frais de dossier : 35€ manquants à facturer"
+- "🟠 ANOMALIE — Reste à payer de 126€ avec 3h planifiées non réglées"
 `
 
 // ── JSON Schema (avec remainingDue dans required — bug fix vs comptadrive) ─
