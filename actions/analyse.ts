@@ -159,6 +159,108 @@ export async function validateAnalysis(analysisId: string) {
   return { success: true }
 }
 
+// ── Re-analyser un dossier existant ─────────────────────────────────────────
+export async function reAnalyseExisting(
+  analysisId: string,
+  formData: FormData
+): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user }, error: authErr } = await supabase.auth.getUser()
+  if (authErr || !user) return { error: 'Non authentifié' }
+
+  const files = formData.getAll('files') as File[]
+  if (!files.length) return { error: 'Aucun fichier fourni' }
+
+  const correctionComment = (formData.get('correction_comment') as string) || ''
+  const adminClient = createAdminClient()
+
+  // 1. Récupérer le contexte original
+  const { data: original, error: fetchErr } = await adminClient
+    .from('ai_analyses')
+    .select('student_name_input, agency, instructor_type, user_comments')
+    .eq('id', analysisId)
+    .single()
+
+  if (fetchErr || !original) return { error: 'Analyse introuvable' }
+
+  // 2. Commentaire fusionné (correction en tête + note initiale)
+  const mergedComment = [
+    correctionComment ? `⚠️ CORRECTION COLLABORATEUR :\n${correctionComment}` : null,
+    original.user_comments ? `Note initiale :\n${original.user_comments}` : null,
+  ].filter(Boolean).join('\n\n') || null
+
+  // 3. Passer en processing
+  await adminClient
+    .from('ai_analyses')
+    .update({ status: 'processing', error_message: null })
+    .eq('id', analysisId)
+
+  try {
+    const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
+
+    const { data: aiSettingsData } = await adminClient
+      .from('school_settings')
+      .select('ai_software_name, ai_custom_instructions, ai_system_prompt')
+      .limit(1)
+      .single()
+
+    const aiSettings = aiSettingsData ? {
+      softwareName: aiSettingsData.ai_software_name,
+      customInstructions: aiSettingsData.ai_custom_instructions,
+      systemPrompt: aiSettingsData.ai_system_prompt,
+    } : undefined
+
+    const result = await analyseDocument(files, {
+      studentName: original.student_name_input ?? undefined,
+      userComments: mergedComment ?? undefined,
+      catalogContext,
+    }, aiSettings)
+
+    const studentName = result.aiExtractedName || original.student_name_input
+    let studentId: string | null = null
+    if (studentName) studentId = await findOrCreateStudent(studentName)
+
+    await adminClient
+      .from('ai_analyses')
+      .update({
+        student_id: studentId,
+        ai_extracted_name: result.aiExtractedName ?? null,
+        total_hours_recorded: result.totalHoursRecorded,
+        driven_hours: result.drivenHours ?? null,
+        planned_hours: result.plannedHours ?? null,
+        exams_passed: result.examsPassed ?? 0,
+        total_expected_amount: result.totalExpectedAmount,
+        total_amount_paid: result.totalAmountPaid,
+        remaining_due: result.remainingDue,
+        calculated_unit_price: result.calculatedUnitPrice,
+        theoretical_catalog_total: result.theoreticalCatalogTotal,
+        revenue_gap: result.revenueGap,
+        report_status: result.reportStatus,
+        summary: result.summary,
+        discrepancies: result.discrepancies,
+        recommendations: result.recommendations,
+        catalog_snapshot: catalogSnapshot as unknown as import('@/lib/types/database').Json,
+        user_comments: mergedComment,
+        is_validated: false,
+        validated_at: null,
+        validated_by: null,
+        status: 'done',
+      })
+      .eq('id', analysisId)
+
+    revalidatePath(`/analyse/${analysisId}`)
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Erreur inconnue'
+    await adminClient
+      .from('ai_analyses')
+      .update({ status: 'error', error_message: message })
+      .eq('id', analysisId)
+    return { error: message }
+  }
+}
+
 // ── Supprimer une analyse ────────────────────────────────────────────────────
 export async function deleteAnalysis(analysisId: string) {
   const supabase = await createClient()

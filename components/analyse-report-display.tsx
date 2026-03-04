@@ -20,6 +20,7 @@ import {
   GraduationCap,
 } from 'lucide-react'
 import { AnalysePdfButton } from './analyse-pdf-button'
+import { ReAnalyseButton } from './reanalyse-button'
 
 const STATUS_CONFIG = {
   VERIFIED: {
@@ -103,6 +104,7 @@ export function AnalyseReportDisplay({ analysis, isAdmin }: AnalyseReportDisplay
               <ShieldCheck className="mr-1 h-3 w-3" /> Validé
             </Badge>
           )}
+          {isAdmin && <ReAnalyseButton analysisId={analysis.id} />}
           <AnalysePdfButton analysis={analysis} />
           {isAdmin && !analysis.isValidated && (
             <Button
