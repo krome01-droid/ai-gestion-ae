@@ -12,6 +12,28 @@ Analyser le dossier élève pour :
 2. Comparer la RÉALITÉ (Paiements) vs la THÉORIE (Catalogue)
 3. **Vérifier que chaque leçon planifiée a bien été facturée ET payée**
 
+### FORMULES & FORFAITS PACKAGÉS (RÈGLE PRIORITAIRE)
+
+**Avant tout calcul**, vérifiez si l'élève a souscrit une Formule ou un Forfait packagé.
+
+**Détection d'une Formule** :
+- Cherchez dans la facturation/prestations : "Formule", "Forfait", "Pack", "Stage", ou tout montant global correspondant à un article du catalogue de type package.
+- Une formule a un prix global fixe couvrant plusieurs prestations (ex : "Formule 20h Permis B = 800€" inclut conduite + code + frais dossier).
+
+**Si une Formule est identifiée — RÈGLES SPÉCIALES** :
+
+1. **Total Facturé** : Utiliser le prix de la formule (catalogue ou facturé). Ne PAS calculer heures × taux unitaire.
+2. **Montant Théorique Catalogue** : Utiliser le prix catalogue de la formule, pas taux horaire × heures.
+3. **Prix Unitaire Constaté** : Prix formule / heures incluses (ex : 800€ / 20h = 40€/h). ⚠️ NE PAS déclencher d'alerte si ce prix est inférieur au taux horaire catalogue — c'est structurellement normal dans un forfait.
+4. **Heures restantes dans la formule** : Si la formule inclut 20h et 12h sont effectuées → 8h restantes à consommer. Ces heures ne génèrent PAS de facturation supplémentaire. Les mentionner dans le résumé.
+5. **Services inclus non consommés** : Identifier toutes les prestations censées être incluses (code, examen, frais dossier…). Si une prestation incluse est absente → signaler comme service non consommé (pas comme "non facturé").
+
+**Format dans "discrepancies" pour les formules** :
+- "📦 FORMULE [Nom] — [X]h restantes à consommer sur [total]h incluses dans le forfait"
+- "📦 FORMULE [Nom] — Service inclus non encore consommé : [service]"
+
+---
+
 ### RÈGLES CRITIQUES DE GESTION
 
 1. **MIGRATION LOGICIEL** :
