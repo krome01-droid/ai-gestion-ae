@@ -184,9 +184,15 @@ export function AnalyseReportDisplay({ analysis, isAdmin, coutHoraire }: Analyse
       {marge !== null && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <KpiBox
+            label="Prix de Revient"
+            value={formatCurrency(prixDeRevient!)}
+            sub={`${formatHours(totalHours)} h × ${coutHoraire?.toFixed(2)}€/h`}
+            icon={TrendingDown}
+          />
+          <KpiBox
             label="Marge Estimée"
             value={formatCurrency(marge)}
-            sub={`PR estimé : ${formatCurrency(prixDeRevient!)} (${formatHours(totalHours)} heures total)`}
+            sub="Total réglé − Prix de revient"
             icon={marge >= 0 ? TrendingUp : TrendingDown}
             danger={marge < 0}
           />
