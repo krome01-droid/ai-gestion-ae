@@ -66,9 +66,10 @@ function KpiBox({ label, value, sub, icon: Icon, highlight, danger }: KpiBoxProp
 interface AnalyseReportDisplayProps {
   analysis: AnalysisRecord
   isAdmin?: boolean
+  coutHoraire?: number
 }
 
-export function AnalyseReportDisplay({ analysis, isAdmin }: AnalyseReportDisplayProps) {
+export function AnalyseReportDisplay({ analysis, isAdmin, coutHoraire }: AnalyseReportDisplayProps) {
   const [validating, setValidating] = useState(false)
   const status = STATUS_CONFIG[analysis.reportStatus] ?? STATUS_CONFIG.UNCERTAIN
   const StatusIcon = status.icon
@@ -84,6 +85,12 @@ export function AnalyseReportDisplay({ analysis, isAdmin }: AnalyseReportDisplay
   const drivenHours = analysis.drivenHours ?? 0
   const plannedHours = analysis.plannedHours ?? 0
   const totalHours = analysis.totalHoursRecorded
+
+  const prixDeRevient = coutHoraire !== undefined ? drivenHours * coutHoraire : null
+  const marge = prixDeRevient !== null ? analysis.totalAmountPaid - prixDeRevient : null
+  const tauxMarge = marge !== null && analysis.totalAmountPaid > 0
+    ? (marge / analysis.totalAmountPaid) * 100
+    : null
 
   return (
     <div className="space-y-6">
@@ -172,6 +179,26 @@ export function AnalyseReportDisplay({ analysis, isAdmin }: AnalyseReportDisplay
           icon={GraduationCap}
         />
       </div>
+
+      {/* Rangée 3 — Marge */}
+      {marge !== null && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiBox
+            label="Marge Estimée"
+            value={formatCurrency(marge)}
+            sub={`PR estimé : ${formatCurrency(prixDeRevient!)} (${formatHours(drivenHours)} conduites)`}
+            icon={marge >= 0 ? TrendingUp : TrendingDown}
+            danger={marge < 0}
+          />
+          <KpiBox
+            label="Taux de Marge"
+            value={tauxMarge !== null ? `${tauxMarge.toFixed(1)}%` : '—'}
+            sub="sur total réglé"
+            icon={TrendingUp}
+            danger={tauxMarge !== null && tauxMarge < 20}
+          />
+        </div>
+      )}
 
       {/* Résumé IA */}
       <Card>

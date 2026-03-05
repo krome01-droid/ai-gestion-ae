@@ -49,13 +49,29 @@ export default async function AnalyseDetailPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: row, error } = await supabase
-    .from('ai_analyses')
-    .select('id, student_id, created_by, file_name, file_type, student_name_input, agency, instructor_type, user_comments, ai_extracted_name, total_hours_recorded, driven_hours, planned_hours, exams_passed, total_expected_amount, total_amount_paid, remaining_due, calculated_unit_price, theoretical_catalog_total, revenue_gap, report_status, summary, discrepancies, recommendations, catalog_snapshot, status, is_validated, error_message, created_at, students(full_name)')
-    .eq('id', id)
-    .single()
+  const [{ data: row, error }, { data: schoolSettings }] = await Promise.all([
+    supabase
+      .from('ai_analyses')
+      .select('id, student_id, created_by, file_name, file_type, student_name_input, agency, instructor_type, user_comments, ai_extracted_name, total_hours_recorded, driven_hours, planned_hours, exams_passed, total_expected_amount, total_amount_paid, remaining_due, calculated_unit_price, theoretical_catalog_total, revenue_gap, report_status, summary, discrepancies, recommendations, catalog_snapshot, status, is_validated, error_message, created_at, students(full_name)')
+      .eq('id', id)
+      .single(),
+    supabase
+      .from('school_settings')
+      .select('taux_horaire_salarie, cout_carburant_heure, assurance_vehicule_heure, cout_secretariat_heure, loyer_charges_heure, frais_divers_ajustement')
+      .limit(1)
+      .maybeSingle(),
+  ])
 
   if (error || !row) notFound()
+
+  const coutHoraire = schoolSettings
+    ? (schoolSettings.taux_horaire_salarie ?? 22.39)
+      + (schoolSettings.cout_carburant_heure ?? 2)
+      + (schoolSettings.assurance_vehicule_heure ?? 2)
+      + (schoolSettings.cout_secretariat_heure ?? 4.66)
+      + (schoolSettings.loyer_charges_heure ?? 9.61)
+      + (schoolSettings.frais_divers_ajustement ?? 0)
+    : undefined
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const typedRow = row as unknown as AnalyseRow
@@ -136,7 +152,7 @@ export default async function AnalyseDetailPage({
         </div>
       </div>
 
-      <AnalyseReportDisplay analysis={analysis} isAdmin={isAdmin} />
+      <AnalyseReportDisplay analysis={analysis} isAdmin={isAdmin} coutHoraire={coutHoraire} />
     </div>
   )
 }
