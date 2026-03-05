@@ -5,7 +5,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Plus, FileSearch } from 'lucide-react'
+import { Plus, FileSearch, Loader2, AlertCircle } from 'lucide-react'
 import { AnalyseDeleteButton } from '@/components/analyse-delete-button'
 
 const STATUS_LABELS = {
@@ -23,8 +23,7 @@ export default async function AnalyseListPage() {
 
   const { data: analyses } = await adminClient
     .from('ai_analyses')
-    .select('id, student_name_input, ai_extracted_name, file_name, report_status, remaining_due, total_hours_recorded, agency, created_at, is_validated')
-    .eq('status', 'done')
+    .select('id, student_name_input, ai_extracted_name, file_name, report_status, remaining_due, total_hours_recorded, agency, created_at, is_validated, status')
     .order('created_at', { ascending: false })
 
   return (
@@ -67,8 +66,13 @@ export default async function AnalyseListPage() {
             </thead>
             <tbody className="divide-y">
               {analyses.map((a) => {
-                const s = STATUS_LABELS[a.report_status as keyof typeof STATUS_LABELS] ?? STATUS_LABELS.UNCERTAIN
                 const name = a.ai_extracted_name || a.student_name_input || a.file_name
+                const isDone = a.status === 'done'
+                const isProcessing = a.status === 'processing'
+                const isError = a.status === 'error'
+                const s = isDone
+                  ? (STATUS_LABELS[a.report_status as keyof typeof STATUS_LABELS] ?? STATUS_LABELS.UNCERTAIN)
+                  : null
                 return (
                   <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-900">
@@ -79,15 +83,27 @@ export default async function AnalyseListPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-500">{a.agency ?? '—'}</td>
                     <td className="px-4 py-3 text-slate-700">
-                      {a.total_hours_recorded != null ? `${a.total_hours_recorded.toFixed(1)}h` : '—'}
+                      {isDone && a.total_hours_recorded != null ? `${a.total_hours_recorded.toFixed(1)}h` : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={a.remaining_due != null && a.remaining_due > 0 ? 'font-semibold text-red-600' : 'text-slate-700'}>
-                        {a.remaining_due != null ? formatCurrency(a.remaining_due) : '—'}
-                      </span>
+                      {isDone ? (
+                        <span className={a.remaining_due != null && a.remaining_due > 0 ? 'font-semibold text-red-600' : 'text-slate-700'}>
+                          {a.remaining_due != null ? formatCurrency(a.remaining_due) : '—'}
+                        </span>
+                      ) : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge className={s.className}>{s.label}</Badge>
+                      {isProcessing && (
+                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 flex items-center gap-1 w-fit">
+                          <Loader2 className="h-3 w-3 animate-spin" /> En cours…
+                        </Badge>
+                      )}
+                      {isError && (
+                        <Badge className="bg-red-100 text-red-700 hover:bg-red-100 flex items-center gap-1 w-fit">
+                          <AlertCircle className="h-3 w-3" /> Erreur
+                        </Badge>
+                      )}
+                      {s && <Badge className={s.className}>{s.label}</Badge>}
                     </td>
                     <td className="px-4 py-3 text-slate-500">{formatDate(a.created_at)}</td>
                     <td className="px-4 py-3">

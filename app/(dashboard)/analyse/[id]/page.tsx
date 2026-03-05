@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import type { Json } from '@/lib/types/database'
+import { ProcessingPoller } from '@/components/processing-poller'
 
 type AnalyseRow = {
   id: string
@@ -86,10 +87,11 @@ export default async function AnalyseDetailPage({
   if (typedRow.status === 'processing') {
     return (
       <div className="flex h-full items-center justify-center p-6">
+        <ProcessingPoller />
         <div className="text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
           <p className="font-medium text-slate-700">Analyse en cours...</p>
-          <p className="mt-1 text-sm text-slate-500">L&apos;IA traite le document. Rechargez dans quelques instants.</p>
+          <p className="mt-1 text-sm text-slate-500">L&apos;IA traite le document. La page se met à jour automatiquement.</p>
         </div>
       </div>
     )

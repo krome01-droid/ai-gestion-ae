@@ -1,10 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { analyseDocument } from '@/lib/gemini/analyse-document'
 import { findOrCreateStudent } from '@/actions/student'
 import type { CatalogSnapshot } from '@/lib/types/analyse'
+import type { Json } from '@/lib/types/database'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -72,74 +74,70 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
   if (insertErr || !inserted) return { error: `Erreur création: ${insertErr?.message ?? 'inconnue'}` }
   const analysisId = inserted.id
 
-  try {
-    // 2. Récupérer le catalogue actuel
-    const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
+  // Processing Gemini en arrière-plan — retour immédiat au client
+  after(async () => {
+    try {
+      const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
 
-    // 3. Récupérer les réglages IA
-    const { data: aiSettingsData } = await adminClient
-      .from('school_settings')
-      .select('ai_software_name, ai_custom_instructions, ai_system_prompt')
-      .limit(1)
-      .single()
+      const { data: aiSettingsData } = await adminClient
+        .from('school_settings')
+        .select('ai_software_name, ai_custom_instructions, ai_system_prompt')
+        .limit(1)
+        .single()
 
-    const aiSettings = aiSettingsData ? {
-      softwareName: aiSettingsData.ai_software_name,
-      customInstructions: aiSettingsData.ai_custom_instructions,
-      systemPrompt: aiSettingsData.ai_system_prompt,
-    } : undefined
+      const aiSettings = aiSettingsData ? {
+        softwareName: aiSettingsData.ai_software_name,
+        customInstructions: aiSettingsData.ai_custom_instructions,
+        systemPrompt: aiSettingsData.ai_system_prompt,
+      } : undefined
 
-    // 4. Appeler Gemini
-    const result = await analyseDocument(files, {
-      studentName: studentNameInput ?? undefined,
-      userComments: userComments ?? undefined,
-      catalogContext,
-    }, aiSettings)
+      const result = await analyseDocument(files, {
+        studentName: studentNameInput ?? undefined,
+        userComments: userComments ?? undefined,
+        catalogContext,
+      }, aiSettings)
 
-    // 5. Trouver ou créer l'élève
-    const studentName = result.aiExtractedName || studentNameInput
-    let studentId: string | null = null
-    if (studentName) {
-      studentId = await findOrCreateStudent(studentName)
+      const studentName = result.aiExtractedName || studentNameInput
+      let studentId: string | null = null
+      if (studentName) studentId = await findOrCreateStudent(studentName)
+
+      await adminClient
+        .from('ai_analyses')
+        .update({
+          student_id: studentId,
+          ai_extracted_name: result.aiExtractedName ?? null,
+          total_hours_recorded: result.totalHoursRecorded,
+          driven_hours: result.drivenHours ?? null,
+          planned_hours: result.plannedHours ?? null,
+          exams_passed: result.examsPassed ?? 0,
+          total_expected_amount: result.totalExpectedAmount,
+          total_amount_paid: result.totalAmountPaid,
+          remaining_due: result.remainingDue,
+          calculated_unit_price: result.calculatedUnitPrice,
+          theoretical_catalog_total: result.theoreticalCatalogTotal,
+          revenue_gap: result.revenueGap,
+          report_status: result.reportStatus,
+          summary: result.summary,
+          discrepancies: result.discrepancies,
+          recommendations: result.recommendations,
+          hours_breakdown: (result.hoursBreakdown ?? null) as unknown as Json,
+          catalog_snapshot: catalogSnapshot as unknown as Json,
+          status: 'done',
+        })
+        .eq('id', analysisId)
+
+      revalidatePath('/analyse')
+      revalidatePath('/dashboard')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur inconnue'
+      await adminClient
+        .from('ai_analyses')
+        .update({ status: 'error', error_message: message })
+        .eq('id', analysisId)
     }
+  })
 
-    // 6. Mettre à jour l'analyse avec les résultats
-    await adminClient
-      .from('ai_analyses')
-      .update({
-        student_id: studentId,
-        ai_extracted_name: result.aiExtractedName ?? null,
-        total_hours_recorded: result.totalHoursRecorded,
-        driven_hours: result.drivenHours ?? null,
-        planned_hours: result.plannedHours ?? null,
-        exams_passed: result.examsPassed ?? 0,
-        total_expected_amount: result.totalExpectedAmount,
-        total_amount_paid: result.totalAmountPaid,
-        remaining_due: result.remainingDue,
-        calculated_unit_price: result.calculatedUnitPrice,
-        theoretical_catalog_total: result.theoreticalCatalogTotal,
-        revenue_gap: result.revenueGap,
-        report_status: result.reportStatus,
-        summary: result.summary,
-        discrepancies: result.discrepancies,
-        recommendations: result.recommendations,
-        hours_breakdown: (result.hoursBreakdown ?? null) as unknown as import('@/lib/types/database').Json,
-        catalog_snapshot: catalogSnapshot as unknown as import('@/lib/types/database').Json,
-        status: 'done',
-      })
-      .eq('id', analysisId)
-
-    revalidatePath('/analyse')
-    revalidatePath('/dashboard')
-    return { analysisId }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Erreur inconnue'
-    await adminClient
-      .from('ai_analyses')
-      .update({ status: 'error', error_message: message })
-      .eq('id', analysisId)
-    return { error: message }
-  }
+  return { analysisId }
 }
 
 // ── Valider une analyse ──────────────────────────────────────────────────────
@@ -196,71 +194,74 @@ export async function reAnalyseExisting(
     .update({ status: 'processing', error_message: null })
     .eq('id', analysisId)
 
-  try {
-    const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
+  // Processing Gemini en arrière-plan — retour immédiat au client
+  after(async () => {
+    try {
+      const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
 
-    const { data: aiSettingsData } = await adminClient
-      .from('school_settings')
-      .select('ai_software_name, ai_custom_instructions, ai_system_prompt')
-      .limit(1)
-      .single()
+      const { data: aiSettingsData } = await adminClient
+        .from('school_settings')
+        .select('ai_software_name, ai_custom_instructions, ai_system_prompt')
+        .limit(1)
+        .single()
 
-    const aiSettings = aiSettingsData ? {
-      softwareName: aiSettingsData.ai_software_name,
-      customInstructions: aiSettingsData.ai_custom_instructions,
-      systemPrompt: aiSettingsData.ai_system_prompt,
-    } : undefined
+      const aiSettings = aiSettingsData ? {
+        softwareName: aiSettingsData.ai_software_name,
+        customInstructions: aiSettingsData.ai_custom_instructions,
+        systemPrompt: aiSettingsData.ai_system_prompt,
+      } : undefined
 
-    const result = await analyseDocument(files, {
-      studentName: original.student_name_input ?? undefined,
-      userComments: mergedComment ?? undefined,
-      catalogContext,
-    }, aiSettings)
+      const result = await analyseDocument(files, {
+        studentName: original.student_name_input ?? undefined,
+        userComments: mergedComment ?? undefined,
+        catalogContext,
+      }, aiSettings)
 
-    const studentName = result.aiExtractedName || original.student_name_input
-    let studentId: string | null = null
-    if (studentName) studentId = await findOrCreateStudent(studentName)
+      const studentName = result.aiExtractedName || original.student_name_input
+      let studentId: string | null = null
+      if (studentName) studentId = await findOrCreateStudent(studentName)
 
-    await adminClient
-      .from('ai_analyses')
-      .update({
-        student_id: studentId,
-        ai_extracted_name: result.aiExtractedName ?? null,
-        total_hours_recorded: result.totalHoursRecorded,
-        driven_hours: result.drivenHours ?? null,
-        planned_hours: result.plannedHours ?? null,
-        exams_passed: result.examsPassed ?? 0,
-        total_expected_amount: result.totalExpectedAmount,
-        total_amount_paid: result.totalAmountPaid,
-        remaining_due: result.remainingDue,
-        calculated_unit_price: result.calculatedUnitPrice,
-        theoretical_catalog_total: result.theoreticalCatalogTotal,
-        revenue_gap: result.revenueGap,
-        report_status: result.reportStatus,
-        summary: result.summary,
-        discrepancies: result.discrepancies,
-        recommendations: result.recommendations,
-        hours_breakdown: (result.hoursBreakdown ?? null) as unknown as import('@/lib/types/database').Json,
-        catalog_snapshot: catalogSnapshot as unknown as import('@/lib/types/database').Json,
-        user_comments: mergedComment,
-        is_validated: false,
-        validated_at: null,
-        validated_by: null,
-        status: 'done',
-      })
-      .eq('id', analysisId)
+      await adminClient
+        .from('ai_analyses')
+        .update({
+          student_id: studentId,
+          ai_extracted_name: result.aiExtractedName ?? null,
+          total_hours_recorded: result.totalHoursRecorded,
+          driven_hours: result.drivenHours ?? null,
+          planned_hours: result.plannedHours ?? null,
+          exams_passed: result.examsPassed ?? 0,
+          total_expected_amount: result.totalExpectedAmount,
+          total_amount_paid: result.totalAmountPaid,
+          remaining_due: result.remainingDue,
+          calculated_unit_price: result.calculatedUnitPrice,
+          theoretical_catalog_total: result.theoreticalCatalogTotal,
+          revenue_gap: result.revenueGap,
+          report_status: result.reportStatus,
+          summary: result.summary,
+          discrepancies: result.discrepancies,
+          recommendations: result.recommendations,
+          hours_breakdown: (result.hoursBreakdown ?? null) as unknown as Json,
+          catalog_snapshot: catalogSnapshot as unknown as Json,
+          user_comments: mergedComment,
+          is_validated: false,
+          validated_at: null,
+          validated_by: null,
+          status: 'done',
+        })
+        .eq('id', analysisId)
 
-    revalidatePath(`/analyse/${analysisId}`)
-    revalidatePath('/dashboard')
-    return { success: true }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Erreur inconnue'
-    await adminClient
-      .from('ai_analyses')
-      .update({ status: 'error', error_message: message })
-      .eq('id', analysisId)
-    return { error: message }
-  }
+      revalidatePath(`/analyse/${analysisId}`)
+      revalidatePath('/dashboard')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur inconnue'
+      await adminClient
+        .from('ai_analyses')
+        .update({ status: 'error', error_message: message })
+        .eq('id', analysisId)
+    }
+  })
+
+  return { success: true }
 }
 
 // ── Supprimer une analyse ────────────────────────────────────────────────────
