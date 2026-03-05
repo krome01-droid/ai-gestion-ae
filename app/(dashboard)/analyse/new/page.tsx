@@ -1,3 +1,5 @@
+export const maxDuration = 300
+
 import { createClient } from '@/lib/supabase/server'
 import { AnalyseUploadForm } from '@/components/analyse-upload-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

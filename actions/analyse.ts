@@ -281,6 +281,24 @@ export async function resetAnalysis(analysisId: string) {
   return { success: true }
 }
 
+// ── Réinitialiser toutes les analyses bloquées en processing ─────────────────
+export async function resetAllStuckAnalyses() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.app_metadata?.role !== 'admin') return { error: 'Non autorisé' }
+
+  const adminClient = createAdminClient()
+  const { error, data } = await adminClient
+    .from('ai_analyses')
+    .update({ status: 'error', error_message: 'Analyse interrompue — veuillez re-analyser le document' })
+    .eq('status', 'processing')
+    .select('id')
+
+  if (error) return { error: error.message }
+  revalidatePath('/analyse')
+  return { success: true, count: data?.length ?? 0 }
+}
+
 // ── Supprimer une analyse ────────────────────────────────────────────────────
 export async function deleteAnalysis(analysisId: string) {
   const supabase = await createClient()

@@ -1,3 +1,5 @@
+export const maxDuration = 300
+
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AnalyseReportDisplay } from '@/components/analyse-report-display'

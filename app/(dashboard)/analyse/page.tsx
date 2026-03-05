@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Plus, FileSearch, Loader2, AlertCircle } from 'lucide-react'
 import { AnalyseDeleteButton } from '@/components/analyse-delete-button'
+import { ResetAllButton } from '@/components/reset-all-button'
 
 const STATUS_LABELS = {
   VERIFIED: { label: 'Conforme', className: 'bg-green-100 text-green-700 hover:bg-green-100' },
@@ -33,12 +34,17 @@ export default async function AnalyseListPage() {
           <h1 className="text-2xl font-bold text-slate-900">Analyses IA</h1>
           <p className="text-sm text-slate-500">{analyses?.length ?? 0} analyse(s) enregistrée(s)</p>
         </div>
-        <Button asChild>
-          <Link href="/analyse/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Nouvelle analyse
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && analyses?.some(a => a.status === 'processing') && (
+            <ResetAllButton />
+          )}
+          <Button asChild>
+            <Link href="/analyse/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Nouvelle analyse
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {!analyses?.length ? (

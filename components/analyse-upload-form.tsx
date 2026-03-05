@@ -65,7 +65,7 @@ export function AnalyseUploadForm({ students }: { students: Array<{ id: string; 
       return
     }
 
-    toast.success('Analyse terminée !')
+    toast.info('Analyse lancée, résultat dans quelques instants…')
     router.push(`/analyse/${result.analysisId}`)
   }
 
