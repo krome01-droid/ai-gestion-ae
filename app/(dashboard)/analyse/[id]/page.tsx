@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import type { Json } from '@/lib/types/database'
 import { ProcessingPoller } from '@/components/processing-poller'
+import { ReAnalyseButton } from '@/components/reanalyse-button'
+import { ResetAnalysisButton } from '@/components/reset-analysis-button'
 
 type AnalyseRow = {
   id: string
@@ -72,6 +74,8 @@ export default async function AnalyseDetailPage({
 
   if (error || !row) notFound()
 
+  const isAdmin = user?.app_metadata?.role === 'admin'
+
   const coutHoraire = schoolSettings
     ? (schoolSettings.taux_horaire_salarie ?? 22.39)
       + (schoolSettings.cout_carburant_heure ?? 2)
@@ -86,12 +90,23 @@ export default async function AnalyseDetailPage({
 
   if (typedRow.status === 'processing') {
     return (
-      <div className="flex h-full items-center justify-center p-6">
+      <div className="p-6 space-y-4">
         <ProcessingPoller />
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
-          <p className="font-medium text-slate-700">Analyse en cours...</p>
-          <p className="mt-1 text-sm text-slate-500">L&apos;IA traite le document. La page se met à jour automatiquement.</p>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-blue-100 bg-blue-50 p-10 text-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
+          <div>
+            <p className="font-medium text-slate-700">Analyse en cours...</p>
+            <p className="mt-1 text-sm text-slate-500">L&apos;IA traite le document. La page se met à jour automatiquement.</p>
+          </div>
+          {isAdmin && (
+            <div className="flex flex-col items-center gap-2 mt-2">
+              <p className="text-xs text-slate-400">Bloqué depuis longtemps ?</p>
+              <div className="flex gap-2">
+                <ResetAnalysisButton analysisId={typedRow.id} />
+                <ReAnalyseButton analysisId={typedRow.id} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -99,11 +114,16 @@ export default async function AnalyseDetailPage({
 
   if (typedRow.status === 'error') {
     return (
-      <div className="p-6">
+      <div className="p-6 space-y-4">
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
           <p className="font-bold text-red-700">Erreur d&apos;analyse</p>
           <p className="mt-2 text-sm text-red-600">{typedRow.error_message ?? 'Une erreur est survenue.'}</p>
         </div>
+        {isAdmin && (
+          <div className="flex justify-center">
+            <ReAnalyseButton analysisId={typedRow.id} />
+          </div>
+        )}
       </div>
     )
   }
@@ -140,8 +160,6 @@ export default async function AnalyseDetailPage({
     discrepancies: (typedRow.discrepancies as string[]) ?? [],
     recommendations: (typedRow.recommendations as string[]) ?? [],
   }
-
-  const isAdmin = user?.app_metadata?.role === 'admin'
 
   return (
     <div className="p-6 space-y-4">

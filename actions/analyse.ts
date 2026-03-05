@@ -264,6 +264,23 @@ export async function reAnalyseExisting(
   return { success: true }
 }
 
+// ── Réinitialiser une analyse bloquée en processing ─────────────────────────
+export async function resetAnalysis(analysisId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.app_metadata?.role !== 'admin') return { error: 'Non autorisé' }
+
+  const adminClient = createAdminClient()
+  const { error } = await adminClient
+    .from('ai_analyses')
+    .update({ status: 'error', error_message: 'Analyse interrompue — veuillez re-analyser le document' })
+    .eq('id', analysisId)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/analyse/${analysisId}`)
+  return { success: true }
+}
+
 // ── Supprimer une analyse ────────────────────────────────────────────────────
 export async function deleteAnalysis(analysisId: string) {
   const supabase = await createClient()
