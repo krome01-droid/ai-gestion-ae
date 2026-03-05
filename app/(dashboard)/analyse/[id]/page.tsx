@@ -22,7 +22,6 @@ type AnalyseRow = {
   driven_hours: number | null
   planned_hours: number | null
   exams_passed: number | null
-  hours_breakdown: Json | null
   total_expected_amount: number | null
   total_amount_paid: number | null
   remaining_due: number | null
@@ -50,10 +49,10 @@ export default async function AnalyseDetailPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: row, error }, { data: schoolSettings }] = await Promise.all([
+  const [{ data: row, error }, { data: schoolSettings }, { data: hoursData }] = await Promise.all([
     supabase
       .from('ai_analyses')
-      .select('id, student_id, created_by, file_name, file_type, student_name_input, agency, instructor_type, user_comments, ai_extracted_name, total_hours_recorded, driven_hours, planned_hours, exams_passed, hours_breakdown, total_expected_amount, total_amount_paid, remaining_due, calculated_unit_price, theoretical_catalog_total, revenue_gap, report_status, summary, discrepancies, recommendations, catalog_snapshot, status, is_validated, error_message, created_at, students(full_name)')
+      .select('id, student_id, created_by, file_name, file_type, student_name_input, agency, instructor_type, user_comments, ai_extracted_name, total_hours_recorded, driven_hours, planned_hours, exams_passed, total_expected_amount, total_amount_paid, remaining_due, calculated_unit_price, theoretical_catalog_total, revenue_gap, report_status, summary, discrepancies, recommendations, catalog_snapshot, status, is_validated, error_message, created_at, students(full_name)')
       .eq('id', id)
       .single(),
     supabase
@@ -61,6 +60,13 @@ export default async function AnalyseDetailPage({
       .select('taux_horaire_salarie, cout_carburant_heure, assurance_vehicule_heure, cout_secretariat_heure, loyer_charges_heure, frais_divers_ajustement')
       .limit(1)
       .maybeSingle(),
+    // Fetch hours_breakdown séparément — fallback silencieux si la colonne n'existe pas encore
+    supabase
+      .from('ai_analyses')
+      .select('hours_breakdown')
+      .eq('id', id)
+      .maybeSingle()
+      .then(r => r.error ? { data: null } : r),
   ])
 
   if (error || !row) notFound()
@@ -120,7 +126,7 @@ export default async function AnalyseDetailPage({
     drivenHours: typedRow.driven_hours ?? undefined,
     plannedHours: typedRow.planned_hours ?? undefined,
     examsPassed: typedRow.exams_passed ?? 0,
-    hoursBreakdown: (typedRow.hours_breakdown as HoursBreakdownItem[] | null) ?? undefined,
+    hoursBreakdown: (hoursData?.hours_breakdown as HoursBreakdownItem[] | null) ?? undefined,
     totalExpectedAmount: typedRow.total_expected_amount ?? 0,
     totalAmountPaid: typedRow.total_amount_paid ?? 0,
     remainingDue: typedRow.remaining_due ?? 0,
