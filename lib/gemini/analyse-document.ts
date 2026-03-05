@@ -116,6 +116,15 @@ Si TOUTES les prestations sont correctement facturées → ne pas ajouter d'entr
 
 5. **Examens** : Nombre total d'examens passés (code de la route + conduite, tous types combinés).
 
+6. **Répartition des heures (champ "hoursBreakdown")** :
+   - Extrayez la liste détaillée des heures regroupées par type de prestation et moniteur/instructeur.
+   - Pour chaque groupe distinct, créez une entrée :
+     - **label** : type de conduite + moniteur si identifiable (ex: "Conduite B - Audrey", "Simulateur", "Conduite BEA 3", "Code de la route")
+     - **hours** : somme des heures de ce groupe
+     - **status** : "done" si effectuées/passées, "planned" si futures/réservées
+   - Regroupez par : 1. type de prestation, 2. moniteur/instructeur si mentionné, 3. statut effectué vs planifié.
+   - ⚠️ Ne PAS inclure l'évaluation de départ dans ce champ.
+
 ### RÈGLES DE CONTRÔLE ET ALERTES
 
 - 🔴 **CRITIQUE** : Si le "Prix Unitaire Constaté" est inférieur de plus de 10% au "Taux Horaire Catalogue".
@@ -202,6 +211,29 @@ const REPORT_SCHEMA: Schema = {
       type: Type.ARRAY,
       items: { type: Type.STRING },
       description: 'Actions recommandées.',
+    },
+    hoursBreakdown: {
+      type: Type.ARRAY,
+      description: 'Répartition détaillée des heures par type de prestation et/ou moniteur.',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          label: {
+            type: Type.STRING,
+            description: 'Type de prestation + moniteur si connu. Ex: "Conduite B - Audrey", "Simulateur", "Conduite BEA 3".',
+          },
+          hours: {
+            type: Type.NUMBER,
+            description: "Nombre d'heures pour ce groupe.",
+          },
+          status: {
+            type: Type.STRING,
+            enum: ['done', 'planned'],
+            description: '"done" = effectuées, "planned" = futures/planifiées.',
+          },
+        },
+        required: ['label', 'hours', 'status'],
+      },
     },
   },
   required: [

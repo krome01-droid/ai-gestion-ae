@@ -123,6 +123,7 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
         summary: result.summary,
         discrepancies: result.discrepancies,
         recommendations: result.recommendations,
+        hours_breakdown: (result.hoursBreakdown ?? null) as unknown as import('@/lib/types/database').Json,
         catalog_snapshot: catalogSnapshot as unknown as import('@/lib/types/database').Json,
         status: 'done',
       })
@@ -239,6 +240,7 @@ export async function reAnalyseExisting(
         summary: result.summary,
         discrepancies: result.discrepancies,
         recommendations: result.recommendations,
+        hours_breakdown: (result.hoursBreakdown ?? null) as unknown as import('@/lib/types/database').Json,
         catalog_snapshot: catalogSnapshot as unknown as import('@/lib/types/database').Json,
         user_comments: mergedComment,
         is_validated: false,

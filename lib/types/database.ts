@@ -124,6 +124,7 @@ export type Database = {
                     validated_at: string | null
                     validated_by: string | null
                     exams_passed: number | null
+                    hours_breakdown: Json | null
                     error_message: string | null
                     created_at: string
                 }
@@ -157,6 +158,7 @@ export type Database = {
                     validated_at?: string | null
                     validated_by?: string | null
                     exams_passed?: number | null
+                    hours_breakdown?: Json | null
                     error_message?: string | null
                     created_at?: string
                 }
@@ -190,6 +192,7 @@ export type Database = {
                     validated_at?: string | null
                     validated_by?: string | null
                     exams_passed?: number | null
+                    hours_breakdown?: Json | null
                     error_message?: string | null
                     created_at?: string
                 }

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AnalyseReportDisplay } from '@/components/analyse-report-display'
-import type { AnalysisRecord, CatalogSnapshot } from '@/lib/types/analyse'
+import type { AnalysisRecord, CatalogSnapshot, HoursBreakdownItem } from '@/lib/types/analyse'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -22,6 +22,7 @@ type AnalyseRow = {
   driven_hours: number | null
   planned_hours: number | null
   exams_passed: number | null
+  hours_breakdown: Json | null
   total_expected_amount: number | null
   total_amount_paid: number | null
   remaining_due: number | null
@@ -52,7 +53,7 @@ export default async function AnalyseDetailPage({
   const [{ data: row, error }, { data: schoolSettings }] = await Promise.all([
     supabase
       .from('ai_analyses')
-      .select('id, student_id, created_by, file_name, file_type, student_name_input, agency, instructor_type, user_comments, ai_extracted_name, total_hours_recorded, driven_hours, planned_hours, exams_passed, total_expected_amount, total_amount_paid, remaining_due, calculated_unit_price, theoretical_catalog_total, revenue_gap, report_status, summary, discrepancies, recommendations, catalog_snapshot, status, is_validated, error_message, created_at, students(full_name)')
+      .select('id, student_id, created_by, file_name, file_type, student_name_input, agency, instructor_type, user_comments, ai_extracted_name, total_hours_recorded, driven_hours, planned_hours, exams_passed, hours_breakdown, total_expected_amount, total_amount_paid, remaining_due, calculated_unit_price, theoretical_catalog_total, revenue_gap, report_status, summary, discrepancies, recommendations, catalog_snapshot, status, is_validated, error_message, created_at, students(full_name)')
       .eq('id', id)
       .single(),
     supabase
@@ -119,6 +120,7 @@ export default async function AnalyseDetailPage({
     drivenHours: typedRow.driven_hours ?? undefined,
     plannedHours: typedRow.planned_hours ?? undefined,
     examsPassed: typedRow.exams_passed ?? 0,
+    hoursBreakdown: (typedRow.hours_breakdown as HoursBreakdownItem[] | null) ?? undefined,
     totalExpectedAmount: typedRow.total_expected_amount ?? 0,
     totalAmountPaid: typedRow.total_amount_paid ?? 0,
     remainingDue: typedRow.remaining_due ?? 0,
