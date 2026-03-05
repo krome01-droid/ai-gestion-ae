@@ -86,7 +86,7 @@ export function AnalyseReportDisplay({ analysis, isAdmin, coutHoraire }: Analyse
   const plannedHours = analysis.plannedHours ?? 0
   const totalHours = analysis.totalHoursRecorded
 
-  const prixDeRevient = coutHoraire !== undefined ? drivenHours * coutHoraire : null
+  const prixDeRevient = coutHoraire !== undefined ? totalHours * coutHoraire : null
   const marge = prixDeRevient !== null ? analysis.totalAmountPaid - prixDeRevient : null
   const tauxMarge = marge !== null && analysis.totalAmountPaid > 0
     ? (marge / analysis.totalAmountPaid) * 100
@@ -186,7 +186,7 @@ export function AnalyseReportDisplay({ analysis, isAdmin, coutHoraire }: Analyse
           <KpiBox
             label="Marge Estimée"
             value={formatCurrency(marge)}
-            sub={`PR estimé : ${formatCurrency(prixDeRevient!)} (${formatHours(drivenHours)} conduites)`}
+            sub={`PR estimé : ${formatCurrency(prixDeRevient!)} (${formatHours(totalHours)} heures total)`}
             icon={marge >= 0 ? TrendingUp : TrendingDown}
             danger={marge < 0}
           />
