@@ -10,6 +10,21 @@ import type { Json } from '@/lib/types/database'
 
 const today = () => new Date().toISOString().split('T')[0]
 
+// Timeout de sécurité : si Gemini ne répond pas en 50s, on lève une erreur
+// pour que le catch() mette status='error' AVANT que Vercel kill la fonction (60s Hobby)
+async function withGeminiTimeout<T>(promise: Promise<T>): Promise<T> {
+  const ms = 50_000
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Délai Gemini dépassé (${ms / 1000}s) — veuillez re-analyser`)),
+        ms
+      )
+    ),
+  ])
+}
+
 // Construit le texte du catalogue depuis Supabase (service_role — bypass RLS)
 async function buildCatalogContext(): Promise<{
   text: string
@@ -106,11 +121,11 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
         systemPrompt: aiSettingsData.ai_system_prompt,
       } : undefined
 
-      const result = await analyseDocument(deserializedFiles, {
+      const result = await withGeminiTimeout(analyseDocument(deserializedFiles, {
         studentName: studentNameInput ?? undefined,
         userComments: userComments ?? undefined,
         catalogContext,
-      }, aiSettings)
+      }, aiSettings))
 
       const studentName = result.aiExtractedName || studentNameInput
       let studentId: string | null = null
@@ -240,11 +255,11 @@ export async function reAnalyseExisting(
         systemPrompt: aiSettingsData.ai_system_prompt,
       } : undefined
 
-      const result = await analyseDocument(deserializedFiles, {
+      const result = await withGeminiTimeout(analyseDocument(deserializedFiles, {
         studentName: original.student_name_input ?? undefined,
         userComments: mergedComment ?? undefined,
         catalogContext,
-      }, aiSettings)
+      }, aiSettings))
 
       const studentName = result.aiExtractedName || original.student_name_input
       let studentId: string | null = null
