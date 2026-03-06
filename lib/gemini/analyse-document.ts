@@ -352,13 +352,14 @@ export async function analyseDocument(
   parts.push({ text: promptText })
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-2.5-flash',
     contents: [{ role: 'user', parts }],
     config: {
       systemInstruction: fullSystemInstruction,
       responseMimeType: 'application/json',
       responseSchema: REPORT_SCHEMA,
       temperature: 0.1,
+      thinkingConfig: { thinkingBudget: 0 },
     },
   })
 
