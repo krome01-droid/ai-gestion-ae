@@ -74,9 +74,24 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
   if (insertErr || !inserted) return { error: `Erreur création: ${insertErr?.message ?? 'inconnue'}` }
   const analysisId = inserted.id
 
+  // Sérialiser les fichiers en base64 avant after() — les File objects
+  // perdent leur contenu après l'envoi de la réponse HTTP
+  const serializedFiles = await Promise.all(
+    files.map(async (f) => ({
+      name: f.name,
+      type: f.type,
+      base64: Buffer.from(await f.arrayBuffer()).toString('base64'),
+    }))
+  )
+
   // Processing Gemini en arrière-plan — retour immédiat au client
   after(async () => {
     try {
+      // Reconstruire les File objects depuis base64
+      const deserializedFiles = serializedFiles.map(({ name, type, base64 }) =>
+        new File([Buffer.from(base64, 'base64')], name, { type })
+      )
+
       const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
 
       const { data: aiSettingsData } = await adminClient
@@ -91,7 +106,7 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
         systemPrompt: aiSettingsData.ai_system_prompt,
       } : undefined
 
-      const result = await analyseDocument(files, {
+      const result = await analyseDocument(deserializedFiles, {
         studentName: studentNameInput ?? undefined,
         userComments: userComments ?? undefined,
         catalogContext,
@@ -188,7 +203,16 @@ export async function reAnalyseExisting(
     original.user_comments ? `Note initiale :\n${original.user_comments}` : null,
   ].filter(Boolean).join('\n\n') || null
 
-  // 3. Passer en processing
+  // 3. Sérialiser les fichiers en base64 avant after()
+  const serializedFiles = await Promise.all(
+    files.map(async (f) => ({
+      name: f.name,
+      type: f.type,
+      base64: Buffer.from(await f.arrayBuffer()).toString('base64'),
+    }))
+  )
+
+  // 4. Passer en processing
   await adminClient
     .from('ai_analyses')
     .update({ status: 'processing', error_message: null })
@@ -197,6 +221,11 @@ export async function reAnalyseExisting(
   // Processing Gemini en arrière-plan — retour immédiat au client
   after(async () => {
     try {
+      // Reconstruire les File objects depuis base64
+      const deserializedFiles = serializedFiles.map(({ name, type, base64 }) =>
+        new File([Buffer.from(base64, 'base64')], name, { type })
+      )
+
       const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
 
       const { data: aiSettingsData } = await adminClient
@@ -211,7 +240,7 @@ export async function reAnalyseExisting(
         systemPrompt: aiSettingsData.ai_system_prompt,
       } : undefined
 
-      const result = await analyseDocument(files, {
+      const result = await analyseDocument(deserializedFiles, {
         studentName: original.student_name_input ?? undefined,
         userComments: mergedComment ?? undefined,
         catalogContext,
