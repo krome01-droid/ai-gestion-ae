@@ -359,6 +359,7 @@ export async function analyseDocument(
       responseMimeType: 'application/json',
       responseSchema: REPORT_SCHEMA,
       temperature: 0.1,
+      thinkingConfig: { thinkingBudget: 0 }, // Désactive le "thinking" étendu → réponse en 5-15s
     },
   })
 
