@@ -12,12 +12,13 @@ export default async function SettingsPage() {
   // Essai avec les colonnes IA (requiert migration SQL)
   const { data: fullSettings, error: schemaErr } = await supabase
     .from('school_settings')
-    .select('id, school_name, logo_url, tva_rate, address, phone, email, siret, taux_horaire_salarie, taux_horaire_independant, cout_carburant_heure, assurance_vehicule_heure, cout_secretariat_heure, loyer_charges_heure, frais_divers_ajustement, ai_software_name, ai_custom_instructions, ai_system_prompt')
+    .select('id, school_name, logo_url, tva_rate, address, phone, email, siret, taux_horaire_salarie, taux_horaire_independant, cout_carburant_heure, assurance_vehicule_heure, cout_secretariat_heure, loyer_charges_heure, frais_divers_ajustement, ai_model, ai_software_name, ai_custom_instructions, ai_system_prompt')
     .limit(1)
     .maybeSingle()
 
   // Fallback si les colonnes IA n'existent pas encore en base
   let settings = fullSettings as typeof fullSettings & {
+    ai_model?: string | null
     ai_software_name?: string | null
     ai_custom_instructions?: string | null
     ai_system_prompt?: string | null
@@ -28,7 +29,7 @@ export default async function SettingsPage() {
       .select('id, school_name, logo_url, tva_rate, address, phone, email, siret, taux_horaire_salarie, taux_horaire_independant, cout_carburant_heure, assurance_vehicule_heure, cout_secretariat_heure, loyer_charges_heure, frais_divers_ajustement')
       .limit(1)
       .maybeSingle()
-    settings = baseSettings ? { ...baseSettings, ai_software_name: null, ai_custom_instructions: null, ai_system_prompt: null } : null
+    settings = baseSettings ? { ...baseSettings, ai_model: null, ai_software_name: null, ai_custom_instructions: null, ai_system_prompt: null } : null
   }
 
   return (

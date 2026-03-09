@@ -351,15 +351,22 @@ export async function analyseDocument(
 
   parts.push({ text: promptText })
 
+  // Modèle configurable via settings — défaut gemini-2.5-flash
+  const modelId = aiSettings?.aiModel?.trim() || 'gemini-2.5-flash'
+  // thinkingConfig uniquement pour les modèles 2.5 (les autres ne le supportent pas)
+  const baseConfig = {
+    systemInstruction: fullSystemInstruction,
+    responseMimeType: 'application/json',
+    responseSchema: REPORT_SCHEMA,
+    temperature: 0.1,
+  }
+
   const response = await ai.models.generateContent({
-    model: 'gemini-1.5-flash',
+    model: modelId,
     contents: [{ role: 'user', parts }],
-    config: {
-      systemInstruction: fullSystemInstruction,
-      responseMimeType: 'application/json',
-      responseSchema: REPORT_SCHEMA,
-      temperature: 0.1,
-    },
+    config: modelId.includes('2.5')
+      ? { ...baseConfig, thinkingConfig: { thinkingBudget: 0 } }
+      : baseConfig,
   })
 
   const text = response.text

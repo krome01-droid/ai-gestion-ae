@@ -25,6 +25,7 @@ interface SettingsData {
   cout_secretariat_heure?: number | null
   loyer_charges_heure?: number | null
   frais_divers_ajustement?: number | null
+  ai_model?: string | null
   ai_software_name?: string | null
   ai_custom_instructions?: string | null
   ai_system_prompt?: string | null
@@ -131,6 +132,19 @@ export function SettingsForm({ settings }: { settings: SettingsData | null }) {
               <Bot className="h-4 w-4" /> Configuration IA d&apos;Analyse
             </p>
             <p className="text-xs text-slate-500">Personnalisez l&apos;IA pour améliorer la précision des rapports.</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Modèle IA</Label>
+            <select
+              name="ai_model"
+              defaultValue={settings?.ai_model || 'gemini-2.5-flash'}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Rapide — recommandé)</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro (Précis — plus lent)</option>
+            </select>
+            <p className="text-xs text-slate-400">Modèle utilisé pour l&apos;analyse des dossiers élèves.</p>
           </div>
 
           <div className="space-y-1.5">

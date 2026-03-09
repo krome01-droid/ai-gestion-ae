@@ -233,6 +233,7 @@ export type Database = {
                     ai_software_name: string | null
                     ai_custom_instructions: string | null
                     ai_system_prompt: string | null
+                    ai_model: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -255,6 +256,7 @@ export type Database = {
                     ai_software_name?: string | null
                     ai_custom_instructions?: string | null
                     ai_system_prompt?: string | null
+                    ai_model?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -277,6 +279,7 @@ export type Database = {
                     ai_software_name?: string | null
                     ai_custom_instructions?: string | null
                     ai_system_prompt?: string | null
+                    ai_model?: string | null
                     created_at?: string
                     updated_at?: string
                 }

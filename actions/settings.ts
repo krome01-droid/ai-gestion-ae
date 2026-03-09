@@ -31,6 +31,7 @@ export async function updateSchoolSettings(formData: FormData) {
     ai_software_name:       (formData.get('ai_software_name')       as string) || null,
     ai_custom_instructions: (formData.get('ai_custom_instructions') as string) || null,
     ai_system_prompt:       (formData.get('ai_system_prompt')       as string) || null,
+    ai_model:               (formData.get('ai_model')               as string) || 'gemini-2.5-flash',
   }
 
   if (existing) {

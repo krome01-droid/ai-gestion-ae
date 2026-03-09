@@ -67,10 +67,12 @@ export interface SchoolSettings {
   aiSoftwareName: string | null
   aiCustomInstructions: string | null
   aiSystemPrompt: string | null
+  aiModel: string | null
 }
 
 export interface AiSettings {
   softwareName?: string | null
   customInstructions?: string | null
   systemPrompt?: string | null
+  aiModel?: string | null
 }

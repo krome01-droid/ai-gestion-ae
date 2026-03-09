@@ -29,7 +29,7 @@ async function buildCatalogContext(): Promise<{
 async function fetchAiSettings(adminClient: ReturnType<typeof createAdminClient>) {
   const { data } = await adminClient
     .from('school_settings')
-    .select('ai_software_name, ai_custom_instructions, ai_system_prompt')
+    .select('ai_software_name, ai_custom_instructions, ai_system_prompt, ai_model')
     .limit(1)
     .single()
   if (!data) return undefined
@@ -37,6 +37,7 @@ async function fetchAiSettings(adminClient: ReturnType<typeof createAdminClient>
     softwareName: data.ai_software_name,
     customInstructions: data.ai_custom_instructions,
     systemPrompt: data.ai_system_prompt,
+    aiModel: data.ai_model,
   }
 }
 

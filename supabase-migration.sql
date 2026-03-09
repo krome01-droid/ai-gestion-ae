@@ -178,6 +178,12 @@ ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS frais_divers_ajustement   N
 ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS ai_software_name          TEXT;
 ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS ai_custom_instructions    TEXT;
 ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS ai_system_prompt          TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS ai_model                  TEXT DEFAULT 'gemini-2.5-flash';
+
+-- Colonne exams_passed (si pas encore créée)
+ALTER TABLE ai_analyses ADD COLUMN IF NOT EXISTS exams_passed    INTEGER;
+ALTER TABLE ai_analyses ADD COLUMN IF NOT EXISTS hours_breakdown JSONB;
+ALTER TABLE ai_analyses ADD COLUMN IF NOT EXISTS error_message   TEXT;
 
 -- Insérer les paramètres par défaut
 INSERT INTO school_settings (school_name) VALUES ('Mon Auto-École')
