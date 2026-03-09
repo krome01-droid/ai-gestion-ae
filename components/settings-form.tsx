@@ -143,6 +143,8 @@ export function SettingsForm({ settings }: { settings: SettingsData | null }) {
             >
               <option value="gemini-2.5-flash">Gemini 2.5 Flash (Rapide — recommandé)</option>
               <option value="gemini-2.5-pro">Gemini 2.5 Pro (Précis — plus lent)</option>
+              <option value="kimi-k2-0711-preview">Kimi K2 — Moonshot AI (Juil. 2025)</option>
+              <option value="kimi-k2-0905-preview">Kimi K2.5 — Moonshot AI (Sept. 2025)</option>
             </select>
             <p className="text-xs text-slate-400">Modèle utilisé pour l&apos;analyse des dossiers élèves.</p>
           </div>

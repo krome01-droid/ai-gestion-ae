@@ -250,6 +250,30 @@ const REPORT_SCHEMA: Schema = {
   ],
 }
 
+// ── Instructions JSON schema pour les providers sans responseSchema natif ────
+const JSON_SCHEMA_INSTRUCTIONS = `
+
+### FORMAT DE RÉPONSE (JSON STRICT REQUIS)
+Retournez UNIQUEMENT un objet JSON valide avec exactement ces champs (pas de texte avant/après) :
+{
+  "aiExtractedName": "string (nom de l'élève ou null)",
+  "totalHoursRecorded": number (total heures effectuées + planifiées),
+  "drivenHours": number (heures effectuées),
+  "plannedHours": number (heures planifiées/futures),
+  "examsPassed": integer (nombre d'examens passés),
+  "totalExpectedAmount": number (total facturé en euros),
+  "totalAmountPaid": number (total payé en euros),
+  "remainingDue": number (reste à payer = facturé - payé),
+  "calculatedUnitPrice": number (prix moyen par heure),
+  "theoreticalCatalogTotal": number (valeur théorique selon catalogue),
+  "revenueGap": number (écart = théorique - facturé),
+  "reportStatus": "VERIFIED" ou "DISCREPANCY" ou "UNCERTAIN",
+  "summary": "string (résumé expert en français)",
+  "discrepancies": ["string", ...] (liste des anomalies, tableau vide si aucune),
+  "recommendations": ["string", ...] (actions recommandées),
+  "hoursBreakdown": [{"label": "string", "hours": number, "status": "done" ou "planned"}, ...]
+}`
+
 // ── Conversion fichier → base64 (PDF / images) ──────────────────────────────
 async function fileToBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer()
@@ -280,6 +304,51 @@ function isVisionFile(file: File): boolean {
   return file.type.includes('pdf') || file.type.startsWith('image/')
 }
 
+// ── Appel Moonshot AI (Kimi K2, OpenAI-compatible) ──────────────────────────
+async function callKimiMoonshot(
+  parts: Array<{ inlineData: { mimeType: string; data: string } } | { text: string }>,
+  systemInstruction: string,
+  modelId: string
+): Promise<string> {
+  const apiKey = process.env.MOONSHOT_API_KEY
+  if (!apiKey) throw new Error('MOONSHOT_API_KEY manquante dans .env.local')
+
+  const userContent = parts.map(part => {
+    if ('inlineData' in part) {
+      return {
+        type: 'image_url' as const,
+        image_url: { url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}` },
+      }
+    }
+    return { type: 'text' as const, text: (part as { text: string }).text }
+  })
+
+  const res = await fetch('https://api.moonshot.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: modelId,
+      messages: [
+        { role: 'system', content: systemInstruction + JSON_SCHEMA_INSTRUCTIONS },
+        { role: 'user', content: userContent },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.6,
+    }),
+  })
+
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Moonshot API (${res.status}): ${errText.slice(0, 300)}`)
+  }
+
+  const data = await res.json()
+  return data.choices[0]?.message?.content ?? ''
+}
+
 // ── Appel principal Gemini ──────────────────────────────────────────────────
 export interface AnalyseContext {
   studentName?: string
@@ -292,10 +361,6 @@ export async function analyseDocument(
   context: AnalyseContext,
   aiSettings?: AiSettings
 ): Promise<AiAnalysisResult> {
-  const apiKey = process.env.GOOGLE_GEMINI_API_KEY
-  if (!apiKey) throw new Error('GOOGLE_GEMINI_API_KEY manquante')
-
-  const ai = new GoogleGenAI({ apiKey })
 
   // Construire le system instruction selon les réglages IA
   let systemInstruction = SYSTEM_INSTRUCTION
@@ -351,26 +416,35 @@ export async function analyseDocument(
 
   parts.push({ text: promptText })
 
-  // Modèle configurable via settings — défaut gemini-2.5-flash
+  // Dispatcher selon le modèle choisi dans Paramètres
   const modelId = aiSettings?.aiModel?.trim() || 'gemini-2.5-flash'
-  // thinkingConfig uniquement pour les modèles 2.5 (les autres ne le supportent pas)
-  const baseConfig = {
-    systemInstruction: fullSystemInstruction,
-    responseMimeType: 'application/json',
-    responseSchema: REPORT_SCHEMA,
-    temperature: 0.1,
+  const isMoonshot = modelId.startsWith('kimi-')
+
+  let responseText: string
+
+  if (isMoonshot) {
+    responseText = await callKimiMoonshot(parts, fullSystemInstruction, modelId)
+  } else {
+    // Gemini
+    const geminiKey = process.env.GOOGLE_GEMINI_API_KEY
+    if (!geminiKey) throw new Error('GOOGLE_GEMINI_API_KEY manquante')
+    const ai = new GoogleGenAI({ apiKey: geminiKey })
+    const baseConfig = {
+      systemInstruction: fullSystemInstruction,
+      responseMimeType: 'application/json',
+      responseSchema: REPORT_SCHEMA,
+      temperature: 0.1,
+    }
+    const response = await ai.models.generateContent({
+      model: modelId,
+      contents: [{ role: 'user', parts }],
+      config: modelId.includes('2.5')
+        ? { ...baseConfig, thinkingConfig: { thinkingBudget: 0 } }
+        : baseConfig,
+    })
+    responseText = response.text ?? ''
   }
 
-  const response = await ai.models.generateContent({
-    model: modelId,
-    contents: [{ role: 'user', parts }],
-    config: modelId.includes('2.5')
-      ? { ...baseConfig, thinkingConfig: { thinkingBudget: 0 } }
-      : baseConfig,
-  })
-
-  const text = response.text
-  if (!text) throw new Error("Réponse vide de l'IA")
-
-  return JSON.parse(text) as AiAnalysisResult
+  if (!responseText) throw new Error("Réponse vide de l'IA")
+  return JSON.parse(responseText) as AiAnalysisResult
 }
