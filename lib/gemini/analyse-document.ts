@@ -324,7 +324,7 @@ async function callKimiMoonshot(
   })
 
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 55_000)
+  const timer = setTimeout(() => controller.abort(), 270_000)
 
   let res: Response
   try {
@@ -348,7 +348,7 @@ async function callKimiMoonshot(
   } catch (err) {
     clearTimeout(timer)
     if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error('Kimi K2 trop lent (> 55s) — essayez Gemini 2.5 Flash dans Paramètres')
+      throw new Error('Kimi K2 trop lent (> 270s) — essayez Gemini 2.5 Flash dans Paramètres')
     }
     throw err
   }
@@ -451,8 +451,8 @@ export async function analyseDocument(
     }
     const geminiTimeout = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error(
-        'Délai Gemini dépassé (55s) — essayez un autre modèle ou re-analysez'
-      )), 55_000)
+        'Délai Gemini dépassé (270s) — essayez un autre modèle ou re-analysez'
+      )), 270_000)
     )
     const response = await Promise.race([
       ai.models.generateContent({
