@@ -401,6 +401,16 @@ export async function analyseDocument(
   const modelId = aiSettings?.aiModel?.trim() || 'gemini-2.5-flash'
   const isMoonshot = modelId.startsWith('kimi-')
 
+  console.log(`[analyseDocument] model: ${modelId} — files: ${files.map(f => f.name + '(' + f.type + ')').join(', ')}`)
+
+  // Kimi K2 ne supporte pas les PDFs (API image_url = images only, pas PDF)
+  if (isMoonshot) {
+    const hasPdf = files.some(f => f.type.includes('pdf'))
+    if (hasPdf) {
+      throw new Error('Kimi K2 ne supporte pas les fichiers PDF — utilisez Gemini 2.5 Flash dans Paramètres')
+    }
+  }
+
   let responseText: string
 
   if (isMoonshot) {

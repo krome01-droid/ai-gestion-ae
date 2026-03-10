@@ -91,6 +91,8 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
     const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
     const aiSettings = await fetchAiSettings(adminClient)
 
+    console.log(`[AI] Starting analysis ${analysisId} — model: ${aiSettings?.aiModel ?? 'gemini-2.5-flash'} — files: ${files.map(f => f.name).join(', ')}`)
+
     const result = await analyseDocument(files, {
       studentName: studentNameInput ?? undefined,
       userComments: userComments ?? undefined,
@@ -129,14 +131,14 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
     revalidatePath('/dashboard')
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
-    console.error(`[AI Analysis] uploadAndAnalyse error for ${analysisId}:`, message)
+    console.error(`[AI] CATCH uploadAndAnalyse ${analysisId}:`, err)
     try {
       await adminClient
         .from('ai_analyses')
         .update({ status: 'error', error_message: message })
         .eq('id', analysisId)
     } catch (dbErr) {
-      console.error(`[AI Analysis] Failed to save error status for ${analysisId}:`, dbErr)
+      console.error(`[AI] CATCH DB update failed for ${analysisId}:`, dbErr)
     }
   }
 
@@ -202,6 +204,8 @@ export async function reAnalyseExisting(
     const { text: catalogContext, snapshot: catalogSnapshot } = await buildCatalogContext()
     const aiSettings = await fetchAiSettings(adminClient)
 
+    console.log(`[AI] Starting reanalysis ${analysisId} — model: ${aiSettings?.aiModel ?? 'gemini-2.5-flash'} — files: ${files.map(f => f.name).join(', ')}`)
+
     const result = await analyseDocument(files, {
       studentName: original.student_name_input ?? undefined,
       userComments: mergedComment ?? undefined,
@@ -244,14 +248,14 @@ export async function reAnalyseExisting(
     revalidatePath('/dashboard')
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
-    console.error(`[AI Analysis] reAnalyse error for ${analysisId}:`, message)
+    console.error(`[AI] CATCH reAnalyse ${analysisId}:`, err)
     try {
       await adminClient
         .from('ai_analyses')
         .update({ status: 'error', error_message: message })
         .eq('id', analysisId)
     } catch (dbErr) {
-      console.error(`[AI Analysis] Failed to save error status for ${analysisId}:`, dbErr)
+      console.error(`[AI] CATCH DB update failed for ${analysisId}:`, dbErr)
     }
   }
 
