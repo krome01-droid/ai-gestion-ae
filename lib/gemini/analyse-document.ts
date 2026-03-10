@@ -122,7 +122,7 @@ Si TOUTES les prestations sont correctement facturées → ne pas ajouter d'entr
      - **Si l'élève a un Forfait/Package** : Prix catalogue du forfait + prix catalogue de chaque prestation supplémentaire hors forfait (examens, heures supplémentaires, frais dossier, etc.).
      - **Si l'élève n'a PAS de forfait** : (Total Heures × Taux Horaire Catalogue) + prix catalogue de chaque prestation facturée individuellement (examens, frais dossier, code, etc.).
      - ⚠️ Ne jamais calculer Heures × Taux unitaire si un forfait a été souscrit — le forfait a son propre prix catalogue.
-   - **Manque à Gagner (Écart)** : \`max(0, Montant Théorique Catalogue − Total Facturé)\`.
+   - **Manque à Gagner (Écart)** : max(0, Montant Théorique Catalogue − Total Facturé).
      - Si Total Facturé **≥** Montant Théorique → Manque à Gagner = **0** (l'auto-école a facturé autant ou plus que le catalogue, aucun manque).
      - Si Total Facturé **<** Montant Théorique → Manque à Gagner = différence (l'auto-école a sous-facturé).
      - ⚠️ Cette valeur ne peut JAMAIS être négative.
