@@ -44,6 +44,15 @@ Analyser le dossier élève pour :
    - L'évaluation de départ n'est PAS une heure de conduite.
    - ⚠️ NE PAS la compter dans le "Total Heures Conduite". C'est une prestation à part (souvent forfaitaire).
 
+3. **TYPES DE LEÇONS COMPTANT COMME HEURES DE CONDUITE** :
+   Les prestations suivantes DOIVENT être comptabilisées dans le "Total Heures Conduite" au même titre qu'une leçon de conduite classique :
+   - **Leçons de simulateur** (ex : "Simulateur", "Simu", "Simulateur B")
+   - **Leçons examen blanc** (ex : "Examen blanc", "Leçon examen blanc", "Blanc conduite")
+   - **Leçons de vérifications** (ex : "Vérifications", "Vérif", "Leçon vérifications véhicule")
+   - **Leçons BEA / post-permis** si elles correspondent à des heures de conduite
+   ⚠️ Ces leçons sont facturées et doivent être incluses dans le total heures ET dans le total facturé.
+   ⚠️ Seule l'**Évaluation de départ** est exclue du total heures conduite.
+
 3. **HEURES PLANIFIÉES / FUTURES — RÈGLE ABSOLUE** :
    - Repérez TOUTES les leçons marquées "Planifiées", "Prévues", "À venir", "Réservées" ou toute date future.
    - ⚠️ Ces heures DOIVENT être comptabilisées dans le "Total Heures".
@@ -98,8 +107,8 @@ Si TOUTES les prestations sont correctement facturées → ne pas ajouter d'entr
 ### CALCULS REQUIS
 
 1. **Analyse des Heures** :
-   - **Heures Effectuées** : Somme des heures passées (hors évaluation de départ).
-   - **Heures Planifiées** : Somme des heures futures réservées (hors évaluation de départ).
+   - **Heures Effectuées** : Somme des heures passées de conduite (inclut simulateur, examen blanc, vérifications, BEA). EXCLURE l'évaluation de départ.
+   - **Heures Planifiées** : Somme des heures futures réservées de conduite (inclut simulateur, examen blanc, vérifications). EXCLURE l'évaluation de départ.
    - **Total Heures** : Effectuées + Planifiées.
 
 2. **Situation Compte Client (Réalité)** :
