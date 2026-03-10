@@ -1,11 +1,5 @@
 export type ReportStatus = 'VERIFIED' | 'DISCREPANCY' | 'UNCERTAIN'
 
-export interface HoursBreakdownItem {
-  label: string    // "Conduite B - Audrey", "Simulateur", "Conduite BEA"
-  hours: number
-  status: 'done' | 'planned'
-}
-
 export interface AiAnalysisResult {
   aiExtractedName?: string
   totalHoursRecorded: number
@@ -22,7 +16,6 @@ export interface AiAnalysisResult {
   summary: string
   discrepancies: string[]
   recommendations: string[]
-  hoursBreakdown?: HoursBreakdownItem[]
 }
 
 export interface CatalogSnapshot {

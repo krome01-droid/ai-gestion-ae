@@ -206,34 +206,6 @@ export function AnalyseReportDisplay({ analysis, isAdmin, coutHoraire }: Analyse
         </div>
       )}
 
-      {/* Répartition des heures */}
-      {analysis.hoursBreakdown && analysis.hoursBreakdown.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="h-4 w-4" />
-              Répartition des heures
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {analysis.hoursBreakdown.map((item, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2 w-2 shrink-0 rounded-full ${item.status === 'planned' ? 'bg-amber-400' : 'bg-blue-400'}`} />
-                    <span className="text-slate-700">{item.label}</span>
-                    {item.status === 'planned' && (
-                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700">planifié</span>
-                    )}
-                  </div>
-                  <span className="font-semibold text-slate-900">{formatHours(item.hours)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Résumé IA */}
       <Card>
         <CardHeader>
