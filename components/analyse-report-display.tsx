@@ -86,6 +86,12 @@ export function AnalyseReportDisplay({ analysis, isAdmin, coutHoraire }: Analyse
   const plannedHours = analysis.plannedHours ?? 0
   const totalHours = analysis.totalHoursRecorded
 
+  const nonFactureItems = (analysis.discrepancies ?? []).filter(d => d.includes('NON FACTURÉ'))
+  const totalNonFacture = nonFactureItems.reduce((acc, d) => {
+    const match = d.match(/:\s*([\d]+(?:[.,][\d]+)?)\s*€/)
+    return acc + (match ? parseFloat(match[1].replace(',', '.')) : 0)
+  }, 0)
+
   const prixDeRevient = coutHoraire !== undefined ? totalHours * coutHoraire : null
   const marge = prixDeRevient !== null ? analysis.totalAmountPaid - prixDeRevient : null
   const tauxMarge = marge !== null && analysis.totalAmountPaid > 0
@@ -217,6 +223,20 @@ export function AnalyseReportDisplay({ analysis, isAdmin, coutHoraire }: Analyse
           </p>
         </CardContent>
       </Card>
+
+      {/* Encart non facturé */}
+      {totalNonFacture > 0 && (
+        <div className="rounded-xl border-2 border-red-400 bg-red-50 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-6 w-6 text-red-600 shrink-0" />
+            <div>
+              <p className="font-bold text-red-700 text-base">Prestations non facturées</p>
+              <p className="text-sm text-red-600">{nonFactureItems.length} prestation(s) consommée(s) sans facturation</p>
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-red-700">{formatCurrency(totalNonFacture)}</p>
+        </div>
+      )}
 
       {/* Anomalies */}
       {analysis.discrepancies?.length > 0 && (
