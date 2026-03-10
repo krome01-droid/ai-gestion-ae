@@ -117,9 +117,12 @@ Si TOUTES les prestations sont correctement facturées → ne pas ajouter d'entr
    - **Reste à Payer (Solde)** : Total Facturé − Total Payé. Ce montant inclut les leçons planifiées non encore réglées.
 
 3. **Analyse de Rentabilité (Théorie Catalogue)** :
-   - **Taux Horaire Catalogue** : Prix standard de l'heure de conduite dans le catalogue.
-   - **Montant Théorique Catalogue** : (Total Heures × Taux Horaire Catalogue) + Frais administratifs standards.
-   - **Manque à Gagner (Écart)** : Montant Théorique Catalogue − Total Facturé.
+   - **Taux Horaire Catalogue** : Prix standard de l'heure de conduite dans le catalogue (hors forfait).
+   - **Montant Théorique Catalogue** : Calculé selon ce qui a été souscrit, PAS uniquement Heures × Taux unitaire.
+     - **Si l'élève a un Forfait/Package** : Prix catalogue du forfait + prix catalogue de chaque prestation supplémentaire hors forfait (examens, heures supplémentaires, frais dossier, etc.).
+     - **Si l'élève n'a PAS de forfait** : (Total Heures × Taux Horaire Catalogue) + prix catalogue de chaque prestation facturée individuellement (examens, frais dossier, code, etc.).
+     - ⚠️ Ne jamais calculer Heures × Taux unitaire si un forfait a été souscrit — le forfait a son propre prix catalogue.
+   - **Manque à Gagner (Écart)** : Montant Théorique Catalogue − Total Facturé. Positif = auto-école a sous-facturé.
 
 4. **Prix Unitaire Constaté** : Total Payé / Total Heures (Effectuées + Planifiées).
 
