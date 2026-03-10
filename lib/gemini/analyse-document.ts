@@ -323,22 +323,36 @@ async function callKimiMoonshot(
     return { type: 'text' as const, text: (part as { text: string }).text }
   })
 
-  const res = await fetch('https://api.moonshot.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: modelId,
-      messages: [
-        { role: 'system', content: systemInstruction + JSON_SCHEMA_INSTRUCTIONS },
-        { role: 'user', content: userContent },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.6,
-    }),
-  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 55_000)
+
+  let res: Response
+  try {
+    res = await fetch('https://api.moonshot.ai/v1/chat/completions', {
+      signal: controller.signal,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [
+          { role: 'system', content: systemInstruction + JSON_SCHEMA_INSTRUCTIONS },
+          { role: 'user', content: userContent },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.6,
+      }),
+    })
+  } catch (err) {
+    clearTimeout(timer)
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Kimi K2 trop lent (> 55s) — essayez Gemini 2.5 Flash dans Paramètres')
+    }
+    throw err
+  }
+  clearTimeout(timer)
 
   if (!res.ok) {
     const errText = await res.text()
@@ -435,13 +449,21 @@ export async function analyseDocument(
       responseSchema: REPORT_SCHEMA,
       temperature: 0.1,
     }
-    const response = await ai.models.generateContent({
-      model: modelId,
-      contents: [{ role: 'user', parts }],
-      config: modelId.includes('2.5')
-        ? { ...baseConfig, thinkingConfig: { thinkingBudget: 0 } }
-        : baseConfig,
-    })
+    const geminiTimeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(
+        'Délai Gemini dépassé (55s) — essayez un autre modèle ou re-analysez'
+      )), 55_000)
+    )
+    const response = await Promise.race([
+      ai.models.generateContent({
+        model: modelId,
+        contents: [{ role: 'user', parts }],
+        config: modelId.includes('2.5')
+          ? { ...baseConfig, thinkingConfig: { thinkingBudget: 0 } }
+          : baseConfig,
+      }),
+      geminiTimeout,
+    ])
     responseText = response.text ?? ''
   }
 
