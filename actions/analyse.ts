@@ -130,10 +130,15 @@ export async function uploadAndAnalyseFile(formData: FormData): Promise<{
     revalidatePath('/dashboard')
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
-    await adminClient
-      .from('ai_analyses')
-      .update({ status: 'error', error_message: message })
-      .eq('id', analysisId)
+    console.error(`[AI Analysis] uploadAndAnalyse error for ${analysisId}:`, message)
+    try {
+      await adminClient
+        .from('ai_analyses')
+        .update({ status: 'error', error_message: message })
+        .eq('id', analysisId)
+    } catch (dbErr) {
+      console.error(`[AI Analysis] Failed to save error status for ${analysisId}:`, dbErr)
+    }
   }
 
   return { analysisId }
@@ -241,10 +246,15 @@ export async function reAnalyseExisting(
     revalidatePath('/dashboard')
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
-    await adminClient
-      .from('ai_analyses')
-      .update({ status: 'error', error_message: message })
-      .eq('id', analysisId)
+    console.error(`[AI Analysis] reAnalyse error for ${analysisId}:`, message)
+    try {
+      await adminClient
+        .from('ai_analyses')
+        .update({ status: 'error', error_message: message })
+        .eq('id', analysisId)
+    } catch (dbErr) {
+      console.error(`[AI Analysis] Failed to save error status for ${analysisId}:`, dbErr)
+    }
   }
 
   return { success: true }

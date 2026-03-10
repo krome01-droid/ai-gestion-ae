@@ -93,7 +93,7 @@ export default async function AnalyseDetailPage({
   if (typedRow.status === 'processing') {
     return (
       <div className="p-6 space-y-4">
-        <ProcessingPoller />
+        <ProcessingPoller createdAt={typedRow.created_at} />
         <div className="flex flex-col items-center justify-center rounded-xl border border-blue-100 bg-blue-50 p-10 text-center gap-4">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
           <div>
