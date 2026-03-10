@@ -174,9 +174,10 @@ export function AnalyseReportDisplay({ analysis, isAdmin, coutHoraire }: Analyse
         />
         <KpiBox
           label="Manque à Gagner"
-          value={formatCurrency(analysis.revenueGap)}
-          icon={analysis.revenueGap > 0 ? TrendingDown : TrendingUp}
-          danger={analysis.revenueGap > 100}
+          value={formatCurrency(analysis.revenueGap + totalNonFacture)}
+          sub={totalNonFacture > 0 ? `dont ${formatCurrency(totalNonFacture)} non facturé` : undefined}
+          icon={(analysis.revenueGap + totalNonFacture) > 0 ? TrendingDown : TrendingUp}
+          danger={(analysis.revenueGap + totalNonFacture) > 100}
         />
         <KpiBox
           label="Examens passés"
