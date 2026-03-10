@@ -122,7 +122,10 @@ Si TOUTES les prestations sont correctement facturées → ne pas ajouter d'entr
      - **Si l'élève a un Forfait/Package** : Prix catalogue du forfait + prix catalogue de chaque prestation supplémentaire hors forfait (examens, heures supplémentaires, frais dossier, etc.).
      - **Si l'élève n'a PAS de forfait** : (Total Heures × Taux Horaire Catalogue) + prix catalogue de chaque prestation facturée individuellement (examens, frais dossier, code, etc.).
      - ⚠️ Ne jamais calculer Heures × Taux unitaire si un forfait a été souscrit — le forfait a son propre prix catalogue.
-   - **Manque à Gagner (Écart)** : Montant Théorique Catalogue − Total Facturé. Positif = auto-école a sous-facturé.
+   - **Manque à Gagner (Écart)** : `max(0, Montant Théorique Catalogue − Total Facturé)`.
+     - Si Total Facturé **≥** Montant Théorique → Manque à Gagner = **0** (l'auto-école a facturé autant ou plus que le catalogue, aucun manque).
+     - Si Total Facturé **<** Montant Théorique → Manque à Gagner = différence (l'auto-école a sous-facturé).
+     - ⚠️ Cette valeur ne peut JAMAIS être négative.
 
 4. **Prix Unitaire Constaté** : Total Payé / Total Heures (Effectuées + Planifiées).
 
@@ -195,7 +198,7 @@ const REPORT_SCHEMA: Schema = {
     },
     revenueGap: {
       type: Type.NUMBER,
-      description: 'Écart financier: Théorique - Facturé.',
+      description: 'Manque à gagner = max(0, Théorique - Facturé). Toujours >= 0. Si Facturé >= Théorique → 0.',
     },
     reportStatus: {
       type: Type.STRING,
@@ -246,7 +249,7 @@ Retournez UNIQUEMENT un objet JSON valide avec exactement ces champs (pas de tex
   "remainingDue": number (reste à payer = facturé - payé),
   "calculatedUnitPrice": number (prix moyen par heure),
   "theoreticalCatalogTotal": number (valeur théorique selon catalogue),
-  "revenueGap": number (écart = théorique - facturé),
+  "revenueGap": number (manque à gagner = max(0, théorique - facturé), jamais négatif),
   "reportStatus": "VERIFIED" ou "DISCREPANCY" ou "UNCERTAIN",
   "summary": "string (résumé expert en français)",
   "discrepancies": ["string", ...] (liste des anomalies, tableau vide si aucune),
