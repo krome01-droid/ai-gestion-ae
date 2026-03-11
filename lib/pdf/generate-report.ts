@@ -1,6 +1,27 @@
 import { jsPDF } from 'jspdf'
 import type { AnalysisRecord, SchoolSettings } from '@/lib/types/analyse'
-import { formatCurrency } from '@/lib/utils'
+
+// Formatage montant compatible jsPDF (remplace les espaces insécables fr-FR par espace simple)
+function formatPdfAmount(amount: number | null | undefined): string {
+  if (amount == null) return '—'
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+  }).format(amount).replace(/[\u00A0\u202F]/g, ' ')
+}
+
+// Nettoyage emojis — Helvetica jsPDF ne supporte pas Unicode hors Latin-1
+function cleanText(text: string): string {
+  return text
+    .replace(/📦/g, '[FORFAIT]')
+    .replace(/🔴/g, '[CRITIQUE]')
+    .replace(/🟠/g, '[ANOMALIE]')
+    .replace(/🟡/g, '[ATTENTION]')
+    .replace(/📋/g, '[NON FACTURE]')
+    .replace(/[^\x00-\xFF]/g, '')
+    .trim()
+}
 
 const DARK_BLUE = '#1e293b'
 const BLUE = '#2563eb'
@@ -136,14 +157,14 @@ export async function generatePDF(
     : `${drivenH.toFixed(1)}h conduites`
 
   drawBox(14, currentY, boxWidth, boxH, 'TOTAL HEURES', `${(report.totalHoursRecorded ?? 0).toFixed(1)} h`, hoursSubtext, [37, 99, 235], [239, 246, 255])
-  drawBox(14 + (boxWidth + gap), currentY, boxWidth, boxH, 'MONTANT FACTURÉ', formatCurrency(report.totalExpectedAmount), plannedH > 0 ? 'Inclut planifiées' : '')
-  drawBox(14 + (boxWidth + gap) * 2, currentY, boxWidth, boxH, 'TOTAL RÉGLÉ', formatCurrency(report.totalAmountPaid))
+  drawBox(14 + (boxWidth + gap), currentY, boxWidth, boxH, 'MONTANT FACTURÉ', formatPdfAmount(report.totalExpectedAmount), plannedH > 0 ? 'Inclut planifiées' : '')
+  drawBox(14 + (boxWidth + gap) * 2, currentY, boxWidth, boxH, 'TOTAL RÉGLÉ', formatPdfAmount(report.totalAmountPaid))
 
   const balance = report.remainingDue ?? 0
   const balanceColor: RGB = balance > 0.5 ? SOFT_RED : [22, 163, 74]
   const balanceBg: RGB = balance > 0.5 ? [254, 242, 242] : [240, 253, 244]
   const balanceTitle = balance > 0.5 ? 'RESTE À PAYER' : balance < -0.5 ? 'TROP PERÇU' : 'COMPTE SOLDÉ'
-  drawBox(14 + (boxWidth + gap) * 3, currentY, boxWidth, boxH, balanceTitle, formatCurrency(Math.abs(balance)), '', balanceColor, balanceBg)
+  drawBox(14 + (boxWidth + gap) * 3, currentY, boxWidth, boxH, balanceTitle, formatPdfAmount(Math.abs(balance)), '', balanceColor, balanceBg)
 
   // ── KPI ROW 2 ─────────────────────────────────────────────────────────────
   currentY += boxH + gap
@@ -154,8 +175,8 @@ export async function generatePDF(
   const gapBgColor: RGB = hasLoss ? SOFT_RED : [240, 253, 244]
 
   drawBox(14, currentY, boxWidth, boxH, 'TAUX HORAIRE PAYÉ', `${(report.calculatedUnitPrice ?? 0).toFixed(2)}€/h`)
-  drawBox(14 + (boxWidth + gap), currentY, boxWidth, boxH, 'VALEUR THÉORIQUE', formatCurrency(report.theoreticalCatalogTotal))
-  drawBox(14 + (boxWidth + gap) * 2, currentY, boxWidth, boxH, 'MANQUE À GAGNER', formatCurrency(gapAmount > 0 ? gapAmount : 0), hasLoss ? 'Perte potentielle' : 'OK', gapTextColor, gapBgColor)
+  drawBox(14 + (boxWidth + gap), currentY, boxWidth, boxH, 'VALEUR THÉORIQUE', formatPdfAmount(report.theoreticalCatalogTotal))
+  drawBox(14 + (boxWidth + gap) * 2, currentY, boxWidth, boxH, 'MANQUE À GAGNER', formatPdfAmount(gapAmount > 0 ? gapAmount : 0), hasLoss ? 'Perte potentielle' : 'OK', gapTextColor, gapBgColor)
   drawBox(14 + (boxWidth + gap) * 3, currentY, boxWidth, boxH, 'VALIDÉ', report.isValidated ? 'Oui' : 'Non', report.fileName.slice(0, 20))
 
   currentY += boxH + 8
@@ -193,7 +214,7 @@ export async function generatePDF(
 
   doc.setFontSize(9)
   doc.setTextColor(50, 50, 50)
-  const splitSummary = doc.splitTextToSize(report.summary || '', pageWidth - 28)
+  const splitSummary = doc.splitTextToSize(cleanText(report.summary || ''), pageWidth - 28)
   doc.text(splitSummary, 14, currentY)
   currentY += splitSummary.length * 5 + 8
 
@@ -211,7 +232,7 @@ export async function generatePDF(
     doc.setFontSize(9)
     doc.setTextColor(50, 50, 50)
     for (const item of report.discrepancies) {
-      const lines = doc.splitTextToSize(`• ${item}`, pageWidth - 28)
+      const lines = doc.splitTextToSize(`• ${cleanText(item)}`, pageWidth - 28)
       if (currentY + lines.length * 5 > pageHeight - 20) {
         doc.addPage(); totalPages++; addFooter(totalPages - 1); currentY = 20
       }
@@ -235,7 +256,7 @@ export async function generatePDF(
     doc.setFontSize(9)
     doc.setTextColor(50, 50, 50)
     for (const item of report.recommendations) {
-      const lines = doc.splitTextToSize(`• ${item}`, pageWidth - 28)
+      const lines = doc.splitTextToSize(`• ${cleanText(item)}`, pageWidth - 28)
       if (currentY + lines.length * 5 > pageHeight - 20) {
         doc.addPage(); totalPages++; addFooter(totalPages - 1); currentY = 20
       }
