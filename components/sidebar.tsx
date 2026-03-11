@@ -37,6 +37,7 @@ const collaborateurItems: NavItem[] = [
   { href: '/collaborateur', label: 'Tableau de bord', icon: LayoutDashboard },
   { href: '/analyse', label: 'Analyses', icon: FileSearch },
   { href: '/eleves', label: 'Élèves', icon: Users },
+  { href: '/rentabilite', label: 'Rentabilité', icon: TrendingUp },
 ]
 
 interface SidebarProps {

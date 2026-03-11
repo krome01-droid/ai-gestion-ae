@@ -34,7 +34,7 @@ type AgencyStat = {
 export default async function RentabilitePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.app_metadata?.role !== 'admin') redirect('/dashboard')
+  if (!user) redirect('/login')
 
   const adminClient = createAdminClient()
 
