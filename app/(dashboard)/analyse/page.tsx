@@ -15,6 +15,21 @@ const STATUS_LABELS = {
   UNCERTAIN: { label: 'Incertain', className: 'bg-amber-100 text-amber-700 hover:bg-amber-100' },
 }
 
+type AnalyseListRow = {
+  id: string
+  student_name_input: string | null
+  ai_extracted_name: string | null
+  file_name: string
+  report_status: string
+  remaining_due: number | null
+  total_hours_recorded: number | null
+  agency: string | null
+  created_at: string
+  is_validated: boolean
+  status: string
+  profiles: { email: string; full_name: string } | null
+}
+
 export default async function AnalyseListPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,20 +37,22 @@ export default async function AnalyseListPage() {
 
   const adminClient = createAdminClient()
 
-  const { data: analyses } = await adminClient
+  const { data: raw } = await adminClient
     .from('ai_analyses')
-    .select('id, student_name_input, ai_extracted_name, file_name, report_status, remaining_due, total_hours_recorded, agency, created_at, is_validated, status')
+    .select('id, student_name_input, ai_extracted_name, file_name, report_status, remaining_due, total_hours_recorded, agency, created_at, is_validated, status, profiles!created_by(email, full_name)')
     .order('created_at', { ascending: false })
+
+  const analyses = (raw ?? []) as unknown as AnalyseListRow[]
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Analyses IA</h1>
-          <p className="text-sm text-slate-500">{analyses?.length ?? 0} analyse(s) enregistrée(s)</p>
+          <p className="text-sm text-slate-500">{analyses.length} analyse(s) enregistrée(s)</p>
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && analyses?.some(a => a.status === 'processing') && (
+          {isAdmin && analyses.some(a => a.status === 'processing') && (
             <ResetAllButton />
           )}
           <Button asChild>
@@ -47,7 +64,7 @@ export default async function AnalyseListPage() {
         </div>
       </div>
 
-      {!analyses?.length ? (
+      {!analyses.length ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed p-16 text-center">
           <FileSearch className="mb-3 h-8 w-8 text-slate-300" />
           <p className="font-medium text-slate-500">Aucune analyse pour l&apos;instant</p>
@@ -66,6 +83,7 @@ export default async function AnalyseListPage() {
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Heures</th>
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Reste à payer</th>
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Statut</th>
+                <th className="px-4 py-3 text-left font-medium text-slate-500">Créé par</th>
                 <th className="px-4 py-3 text-left font-medium text-slate-500">Date</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -79,6 +97,9 @@ export default async function AnalyseListPage() {
                 const s = isDone
                   ? (STATUS_LABELS[a.report_status as keyof typeof STATUS_LABELS] ?? STATUS_LABELS.UNCERTAIN)
                   : null
+                const creator = a.profiles?.full_name
+                  || a.profiles?.email?.split('@')[0]
+                  || '—'
                 return (
                   <tr key={a.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-900">
@@ -111,6 +132,7 @@ export default async function AnalyseListPage() {
                       )}
                       {s && <Badge className={s.className}>{s.label}</Badge>}
                     </td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">{creator}</td>
                     <td className="px-4 py-3 text-slate-500">{formatDate(a.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
