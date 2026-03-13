@@ -136,6 +136,7 @@ Si TOUTES les prestations sont correctement facturées → ne pas ajouter d'entr
 - 🔴 **CRITIQUE** : Si le "Prix Unitaire Constaté" est inférieur de plus de 10% au "Taux Horaire Catalogue".
 - 🔴 **CRITIQUE** : Si des leçons planifiées sont absentes du "Total Facturé".
 - 🔴 **CRITIQUE** : Si des prestations consommées (leçons passées, examens, frais) sont absentes de la facturation.
+- 🔴 **CRITIQUE → reportStatus = DISCREPANCY** : Si "Reste à Payer" > 0, le dossier est OBLIGATOIREMENT en anomalie (impayé en cours).
 - 🟠 **ANOMALIE** : Si le "Reste à Payer" est positif ET que des leçons planifiées existent (risque de non-recouvrement).
 - 🟠 **ANOMALIE** : Si le nombre d'heures planifiées × prix catalogue ne correspond pas au supplément facturé.
 - 🟡 **ATTENTION** : Si l'élève a des leçons planifiées mais aucun paiement récent (risque d'impayé futur).
