@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { formatCurrency } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
-import { TrendingUp, TrendingDown, AlertTriangle, FileSearch, Clock, GraduationCap, Banknote, Receipt, Percent, Calculator } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertTriangle, FileSearch, Clock, GraduationCap, Banknote, Receipt, Percent, Calculator, CreditCard } from 'lucide-react'
 
 type AnalyseRow = {
   agency: string | null
@@ -112,6 +112,7 @@ export default async function RentabilitePage() {
   const pctAnomalies = totalAnalyses > 0 ? Math.round(totalAnomalies / totalAnalyses * 100) : 0
   const totalDrivenHours = rows.reduce((s, r) => s + (r.driven_hours ?? 0), 0)
   const totalExams = rows.reduce((s, r) => s + (r.exams_passed ?? 0), 0)
+  const totalReste = rows.reduce((s, r) => s + (r.remaining_due ?? 0), 0)
 
   // ── Calculs rentabilité globaux ───────────────────────────────────────────────
   const prixDeRevientGlobal = totalDrivenHours * coutHoraire
@@ -126,7 +127,7 @@ export default async function RentabilitePage() {
       </div>
 
       {/* KPIs — Ligne 1 : Activité */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-1">
@@ -180,6 +181,17 @@ export default async function RentabilitePage() {
             </div>
             <p className="text-2xl font-bold text-red-600">{totalAnomalies}</p>
             <p className="text-xs text-slate-400">{pctAnomalies}% des analyses</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <CreditCard className="h-4 w-4 text-red-400" />
+              <p className="text-xs uppercase text-slate-500">Reste à payer</p>
+            </div>
+            <p className={`text-2xl font-bold ${totalReste > 0 ? 'text-red-600' : 'text-slate-700'}`}>
+              {formatCurrency(totalReste)}
+            </p>
           </CardContent>
         </Card>
       </div>
